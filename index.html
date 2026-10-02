@@ -1,0 +1,1202 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>나의 영어 단어장</title>
+<!-- 아이폰 '홈 화면에 추가' 시 앱처럼 열리도록 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="단어장">
+<meta name="theme-color" content="#F2F4F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#11151D" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap">
+<style>
+/* Layout: single 760px column — header with live counts, three tabs (단어장 / 카드 / 퀴즈), index-card surfaces only where the word itself is shown */
+:root {
+  --bg: #F2F4F7;
+  --surface: #FFFFFF;
+  --ink: #18202E;
+  --muted: #5B6679;
+  --line: #DCE1EA;
+  --accent: #3346D3;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #E6E9FB;
+  --marker: #FFE45C;
+  --marker-ink: #18202E;
+  --good: #1D7A4E;
+  --good-soft: #E1F3E9;
+  --bad: #C0392B;
+  --bad-soft: #FBE6E3;
+  --card-rule: #C9D3F5;
+  --f-word: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --f-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11151D; --surface: #1A2030; --ink: #E7EAF1; --muted: #9AA4B8; --line: #2C3446;
+    --accent: #8C9BFF; --accent-ink: #0F1320; --accent-soft: #252D4D;
+    --marker: rgba(255, 214, 0, .30); --marker-ink: #FFF6CC;
+    --good: #5FD39A; --good-soft: #173527; --bad: #FF8A7A; --bad-soft: #3A1D1A;
+    --card-rule: #2E3960; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11151D; --surface: #1A2030; --ink: #E7EAF1; --muted: #9AA4B8; --line: #2C3446;
+  --accent: #8C9BFF; --accent-ink: #0F1320; --accent-soft: #252D4D;
+  --marker: rgba(255, 214, 0, .30); --marker-ink: #FFF6CC;
+  --good: #5FD39A; --good-soft: #173527; --bad: #FF8A7A; --bad-soft: #3A1D1A;
+  --card-rule: #2E3960; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 760px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 64px; display: flex; flex-direction: column; gap: 18px; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 16px; }
+h1 { font-family: var(--f-word); font-weight: 600; font-size: 1.9rem; line-height: 1.1; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+.stats { font-family: var(--f-mono); font-size: .8rem; color: var(--muted); display: flex; gap: 14px; font-variant-numeric: tabular-nums; }
+.stats b { color: var(--ink); font-weight: 500; }
+.store-note { font-size: .78rem; color: var(--muted); margin: 4px 0 0; }
+.store-note.warn { color: var(--bad); }
+.stats { align-items: center; }
+.icon-btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; width: 32px; height: 32px; padding: 0; font-size: 1rem; line-height: 1; color: var(--muted); }
+.icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+.icon-btn:disabled { opacity: .5; cursor: default; }
+.icon-btn.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+code { font-family: var(--f-mono); font-size: .85em; background: var(--bg); border-radius: 4px; padding: 0 4px; }
+
+nav.tabs { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; }
+nav.tabs button { border: 0; background: transparent; padding: 8px 0; border-radius: 999px; font-weight: 600; color: var(--muted); }
+nav.tabs button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
+
+.panel { display: flex; flex-direction: column; gap: 16px; }
+.box { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.box h2 { font-size: 1rem; margin: 0; }
+.hint { font-size: .82rem; color: var(--muted); margin: 0; }
+.label { font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+
+.drop { border: 1.5px dashed var(--line); border-radius: var(--r); padding: 18px 14px; text-align: center; display: flex; flex-direction: column; gap: 6px; align-items: center; transition: border-color .15s, background .15s; }
+.drop.over { border-color: var(--accent); background: var(--accent-soft); }
+.drop strong { font-size: .95rem; }
+.cols { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.cols span { font-family: var(--f-mono); font-size: .75rem; border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; color: var(--muted); }
+
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 14px; font-weight: 600; font-size: .9rem; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.danger { color: var(--bad); }
+.btn.danger.solid { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn.small { padding: 4px 10px; font-size: .8rem; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.row.end { justify-content: flex-end; }
+.grow { flex: 1 1 180px; min-width: 0; }
+input[type="text"], input[type="search"], select { border: 1px solid var(--line); background: var(--bg); border-radius: 8px; padding: 8px 10px; width: 100%; min-width: 0; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.radio { display: inline-flex; gap: 6px; align-items: center; font-size: .88rem; }
+
+.summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.summary div { background: var(--bg); border-radius: 8px; padding: 8px 10px; }
+.summary b { display: block; font-family: var(--f-mono); font-size: 1.2rem; font-variant-numeric: tabular-nums; }
+.summary span { font-size: .78rem; color: var(--muted); }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: .84rem; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+th { color: var(--muted); font-weight: 600; font-size: .75rem; }
+tr:last-child td { border-bottom: 0; }
+.tag-dup { color: var(--muted); font-size: .72rem; }
+.progress { height: 6px; background: var(--bg); border-radius: 99px; overflow: hidden; }
+.progress i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .2s; }
+.msg { font-size: .86rem; padding: 8px 12px; border-radius: 8px; margin: 0; }
+.msg.ok { background: var(--good-soft); color: var(--good); }
+.msg.err { background: var(--bad-soft); color: var(--bad); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 3px 11px; font-size: .8rem; color: var(--muted); }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.chip small { font-family: var(--f-mono); opacity: .75; margin-left: 4px; }
+
+ul.words { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+ul.words li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 12px 2px; border-bottom: 1px solid var(--line); }
+ul.words li:last-child { border-bottom: 0; }
+.w-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; min-width: 0; }
+.w-word { font-family: var(--f-word); font-size: 1.2rem; font-weight: 600; overflow-wrap: anywhere; }
+.w-mean { overflow-wrap: anywhere; }
+.w-ex { grid-column: 1 / -1; font-size: .86rem; color: var(--muted); font-style: italic; overflow-wrap: anywhere; margin: 0; }
+.w-tags { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px; }
+.w-tags span { font-size: .72rem; background: var(--accent-soft); color: var(--accent); border-radius: 4px; padding: 0 6px; }
+.w-act { display: flex; gap: 6px; align-items: flex-start; }
+mark { background: var(--marker); color: var(--marker-ink); padding: 0 2px; border-radius: 2px; font-style: normal; }
+.empty { text-align: center; padding: 28px 12px; display: flex; flex-direction: column; gap: 10px; align-items: center; color: var(--muted); }
+.empty p { margin: 0; max-width: 42ch; }
+
+/* Flashcard: an index card with a red margin line and blue rules */
+.card-stage { perspective: 1400px; }
+.fcard { position: relative; width: 100%; min-height: 280px; border: 0; padding: 0; background: transparent; transform-style: preserve-3d; transition: transform .45s cubic-bezier(.3,.7,.3,1); display: block; }
+.fcard.flipped { transform: rotateY(180deg); }
+.face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 44px 22px 22px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 12px; text-align: center;
+  background-image: linear-gradient(to bottom, transparent 30px, var(--bad) 30px, var(--bad) 31px, transparent 31px), repeating-linear-gradient(to bottom, transparent 0 31px, var(--card-rule) 31px 32px);
+  background-position: 0 0, 0 30px; background-repeat: no-repeat, repeat; background-size: 100% 100%, 100% 100%; box-shadow: 0 1px 2px rgba(0,0,0,.06); overflow: hidden; }
+.face.back { transform: rotateY(180deg); }
+.face .big { font-family: var(--f-word); font-size: clamp(1.8rem, 7vw, 2.8rem); font-weight: 600; line-height: 1.15; overflow-wrap: anywhere; background: var(--surface); padding: 0 6px; }
+.face .mean { font-size: 1.2rem; font-weight: 600; overflow-wrap: anywhere; background: var(--surface); padding: 0 6px; }
+.face .ex { font-size: .92rem; color: var(--muted); font-style: italic; max-width: 46ch; overflow-wrap: anywhere; background: var(--surface); padding: 0 6px; }
+.face .corner { position: absolute; top: 6px; left: 14px; font-family: var(--f-mono); font-size: .72rem; color: var(--muted); }
+.face .tapnote { position: absolute; bottom: 10px; font-size: .72rem; color: var(--muted); }
+.card-nav { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; }
+.card-nav .count { font-family: var(--f-mono); font-variant-numeric: tabular-nums; color: var(--muted); font-size: .9rem; }
+.card-nav .btn:last-child { justify-self: end; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; background: var(--surface); padding: 6px 12px; font-size: .84rem; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+
+/* Quiz */
+.q-prompt { font-family: var(--f-word); font-size: clamp(1.6rem, 6vw, 2.2rem); font-weight: 600; text-align: center; overflow-wrap: anywhere; padding: 8px 0; }
+.q-prompt.ko { font-family: var(--f-body); font-size: 1.3rem; }
+.q-meta { display: flex; justify-content: space-between; font-family: var(--f-mono); font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.choices { display: grid; gap: 8px; }
+.choice { text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 12px 14px; display: flex; gap: 12px; align-items: flex-start; overflow-wrap: anywhere; min-width: 0; }
+.choice .n { font-family: var(--f-mono); color: var(--muted); font-size: .85rem; padding-top: 1px; }
+.choice:hover:not(:disabled) { border-color: var(--accent); }
+.choice.right { border-color: var(--good); background: var(--good-soft); color: var(--good); }
+.choice.wrong { border-color: var(--bad); background: var(--bad-soft); color: var(--bad); }
+.choice:disabled { cursor: default; }
+.choice.en { font-family: var(--f-word); font-size: 1.1rem; }
+.score { font-family: var(--f-word); font-size: 3rem; font-weight: 600; text-align: center; line-height: 1; font-variant-numeric: tabular-nums; }
+.score small { font-size: 1.2rem; color: var(--muted); }
+
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+@media (prefers-reduced-motion: reduce) { .fcard, .progress i, .drop { transition: none; } }
+@media (max-width: 480px) { .summary b { font-size: 1.05rem; } h1 { font-size: 1.6rem; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>나의 영어 단어장</h1>
+      <p class="store-note" id="storeNote">단어장을 불러오는 중…</p>
+    </div>
+    <div class="stats" aria-live="polite">
+      <span>단어 <b id="statWords">0</b></span>
+      <span>태그 <b id="statTags">0</b></span>
+      <button class="icon-btn" id="btnReload" type="button" aria-label="GitHub에서 다시 불러오기" title="다시 불러오기">↻</button>
+      <button class="icon-btn" id="btnSettings" type="button" aria-label="동기화 설정" aria-expanded="false" title="동기화 설정">⚙</button>
+    </div>
+  </header>
+
+  <!-- ============ 동기화 설정 (GitHub) ============ -->
+  <section class="box" id="syncBox" hidden>
+    <div class="row" style="justify-content:space-between">
+      <h2>GitHub 동기화 설정</h2>
+      <button class="btn small" id="syncClose" type="button">닫기</button>
+    </div>
+    <p class="hint">단어는 저장소의 <code>data/words.json</code> 파일에 저장돼요. 토큰은 <b>이 기기에만</b> 저장되고 저장소에는 올라가지 않아요. 기기마다 한 번씩 입력해 주세요.</p>
+    <form id="syncForm" style="display:flex;flex-direction:column;gap:10px">
+      <div class="row">
+        <div class="field grow"><label class="label" for="sRepo">저장소 (아이디/저장소이름)</label><input type="text" id="sRepo" placeholder="myname/vocab" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+        <div class="field" style="flex:0 1 120px"><label class="label" for="sBranch">브랜치</label><input type="text" id="sBranch" placeholder="main" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+      </div>
+      <div class="field"><label class="label" for="sToken">토큰 (Fine-grained token)</label><input type="password" id="sToken" placeholder="github_pat_…" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+      <p class="hint">토큰 없이 저장하면 <b>읽기 전용</b>으로 열려요. 단어 보기·카드·퀴즈는 되지만 추가·삭제는 안 돼요.</p>
+      <p class="msg" id="syncMsg" hidden></p>
+      <div class="row end">
+        <button class="btn danger" id="sForget" type="button">이 기기에서 토큰 지우기</button>
+        <button class="btn primary" id="sSave" type="submit">저장하고 연결</button>
+      </div>
+    </form>
+  </section>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" id="tab-list" aria-selected="true" data-tab="list">단어장</button>
+    <button role="tab" id="tab-card" aria-selected="false" data-tab="card">카드</button>
+    <button role="tab" id="tab-quiz" aria-selected="false" data-tab="quiz">퀴즈</button>
+  </nav>
+
+  <!-- ============ 단어장 ============ -->
+  <section class="panel" id="panel-list">
+    <div class="box">
+      <div class="row" style="justify-content:space-between">
+        <h2>엑셀로 단어 추가</h2>
+        <div class="row">
+          <button class="btn small" id="btnExport" type="button">엑셀로 내보내기</button>
+          <button class="btn small" id="btnTemplate" type="button">양식 받기 (.xlsx)</button>
+        </div>
+      </div>
+      <label class="drop" id="drop" for="fileInput">
+        <strong>엑셀 파일을 끌어다 놓거나 눌러서 선택</strong>
+        <span class="hint">.xlsx · .xls · .csv — 첫 번째 줄이 제목이면 자동으로 인식해요</span>
+        <span class="cols"><span>A 단어</span><span>B 뜻</span><span>C 예문</span><span>D 태그</span></span>
+        <input type="file" id="fileInput" class="sr" accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv">
+      </label>
+      <p class="hint">태그는 쉼표로 여러 개 넣을 수 있어요 (예: <code>토익, Day3</code>). 예문과 태그는 비워도 됩니다.</p>
+      <p class="msg" id="tplMsg" hidden></p>
+
+      <div id="importPreview" hidden>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="row" style="justify-content:space-between">
+            <span class="label" id="pvFile"></span>
+            <select id="pvSheet" style="width:auto" hidden aria-label="시트 선택"></select>
+          </div>
+          <div class="summary">
+            <div><b id="pvNew">0</b><span>새 단어</span></div>
+            <div><b id="pvDup">0</b><span>이미 있는 단어</span></div>
+            <div><b id="pvBad">0</b><span>제외 (뜻 없음)</span></div>
+          </div>
+          <div class="tablewrap"><table>
+            <thead><tr><th>단어</th><th>뜻</th><th>예문</th><th>태그</th></tr></thead>
+            <tbody id="pvRows"></tbody>
+          </table></div>
+          <p class="hint" id="pvMore"></p>
+          <div class="field">
+            <label class="label" for="pvTag">모든 단어에 붙일 태그 (선택)</label>
+            <input type="text" id="pvTag" placeholder="예: Day3">
+          </div>
+          <div class="row" id="pvDupPolicy">
+            <span class="label">이미 있는 단어는</span>
+            <label class="radio"><input type="radio" name="dup" value="skip" id="dupSkip" checked> 건너뛰기</label>
+            <label class="radio"><input type="radio" name="dup" value="overwrite" id="dupOver"> 새 내용으로 바꾸기</label>
+          </div>
+          <div class="progress" id="pvProg" hidden><i></i></div>
+          <div class="row end">
+            <button class="btn" id="pvCancel" type="button">취소</button>
+            <button class="btn primary" id="pvApply" type="button">단어장에 추가</button>
+          </div>
+        </div>
+      </div>
+      <p class="msg" id="importMsg" hidden></p>
+    </div>
+
+    <details class="box" id="manualBox">
+      <summary style="cursor:pointer;font-weight:600">한 단어씩 직접 추가</summary>
+      <form id="manualForm" style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
+        <div class="row">
+          <div class="field grow"><label class="label" for="mWord">단어</label><input type="text" id="mWord" required autocomplete="off"></div>
+          <div class="field grow"><label class="label" for="mMean">뜻</label><input type="text" id="mMean" required autocomplete="off"></div>
+        </div>
+        <div class="field"><label class="label" for="mEx">예문</label><input type="text" id="mEx" autocomplete="off"></div>
+        <div class="row">
+          <div class="field grow"><label class="label" for="mTag">태그</label><input type="text" id="mTag" placeholder="쉼표로 구분" autocomplete="off"></div>
+          <button class="btn primary" type="submit" style="align-self:flex-end">추가</button>
+        </div>
+        <p class="msg" id="manualMsg" hidden></p>
+      </form>
+    </details>
+
+    <div class="box">
+      <div class="row">
+        <input type="search" id="search" class="grow" placeholder="단어나 뜻으로 찾기" aria-label="검색">
+      </div>
+      <div class="chips" id="tagChips"></div>
+      <div class="row" id="bulkRow" hidden>
+        <span class="hint" id="bulkText"></span>
+        <button class="btn small danger" id="bulkDel" type="button">이 태그 단어 모두 삭제</button>
+        <span id="bulkConfirm" hidden class="row">
+          <button class="btn small danger solid" id="bulkYes" type="button">삭제</button>
+          <button class="btn small" id="bulkNo" type="button">취소</button>
+        </span>
+      </div>
+      <ul class="words" id="wordList"></ul>
+      <div class="empty" id="listEmpty" hidden>
+        <p><strong style="color:var(--ink)">아직 단어가 없어요.</strong><br>위에서 엑셀 파일을 올리면 여기에 쌓여요. 먼저 둘러보려면 예시 단어를 넣어 보세요.</p>
+        <button class="btn" id="btnSample" type="button">예시 단어 8개 넣기</button>
+      </div>
+      <p class="hint" id="noMatch" hidden style="text-align:center">찾는 단어가 없어요.</p>
+      <div class="row" style="justify-content:center"><button class="btn small" id="moreBtn" type="button" hidden>더 보기</button></div>
+    </div>
+  </section>
+
+  <!-- ============ 카드 ============ -->
+  <section class="panel" id="panel-card" hidden>
+    <div class="row">
+      <div class="field grow"><label class="label" for="cTag">범위</label><select id="cTag"></select></div>
+      <div class="field"><span class="label">앞면</span>
+        <div class="seg" id="cFront"><button type="button" data-v="w" aria-pressed="true">단어</button><button type="button" data-v="m" aria-pressed="false">뜻</button></div></div>
+      <div class="field"><span class="label">순서</span>
+        <div class="seg" id="cOrder"><button type="button" data-v="seq" aria-pressed="true">추가순</button><button type="button" data-v="rnd" aria-pressed="false">섞기</button></div></div>
+    </div>
+    <div id="cardArea">
+      <div class="card-stage">
+        <button class="fcard" id="fcard" type="button" aria-label="카드 뒤집기">
+          <div class="face front"><span class="corner" id="cCornerF"></span><div id="cFrontBody"></div><span class="tapnote">눌러서 뒤집기 · Space</span></div>
+          <div class="face back"><span class="corner" id="cCornerB"></span><div id="cBackBody" style="display:flex;flex-direction:column;gap:12px;align-items:center"></div></div>
+        </button>
+      </div>
+      <div class="card-nav" style="margin-top:14px">
+        <button class="btn" id="cPrev" type="button">← 이전</button>
+        <span class="count" id="cCount">0 / 0</span>
+        <button class="btn primary" id="cNext" type="button">다음 →</button>
+      </div>
+    </div>
+    <div class="empty box" id="cardEmpty" hidden><p>이 범위에 단어가 없어요. 단어장 탭에서 먼저 단어를 추가하세요.</p></div>
+  </section>
+
+  <!-- ============ 퀴즈 ============ -->
+  <section class="panel" id="panel-quiz" hidden>
+    <div class="box" id="qSetup">
+      <h2>4지선다 퀴즈</h2>
+      <div class="row">
+        <div class="field grow"><label class="label" for="qTag">범위</label><select id="qTag"></select></div>
+        <div class="field"><span class="label">문제</span>
+          <div class="seg" id="qDir"><button type="button" data-v="w2m" aria-pressed="true">단어 → 뜻</button><button type="button" data-v="m2w" aria-pressed="false">뜻 → 단어</button></div></div>
+        <div class="field"><label class="label" for="qCount">문항 수</label>
+          <select id="qCount" style="width:auto"><option value="10">10문제</option><option value="20">20문제</option><option value="0">전체</option></select></div>
+      </div>
+      <p class="msg err" id="qErr" hidden></p>
+      <div class="row end"><button class="btn primary" id="qStart" type="button">퀴즈 시작</button></div>
+    </div>
+
+    <div class="box" id="qPlay" hidden>
+      <div class="q-meta"><span id="qPos">1 / 10</span><span id="qScoreNow">정답 0</span></div>
+      <div class="progress"><i id="qBar"></i></div>
+      <div class="q-prompt" id="qPrompt"></div>
+      <div class="choices" id="qChoices"></div>
+      <p class="hint" id="qExample" style="text-align:center" hidden></p>
+      <div class="row" style="justify-content:space-between">
+        <button class="btn small" id="qQuit" type="button">그만하기</button>
+        <button class="btn primary" id="qNext" type="button" hidden>다음 문제</button>
+      </div>
+    </div>
+
+    <div class="box" id="qResult" hidden>
+      <div class="score" id="qScore"></div>
+      <p class="hint" style="text-align:center" id="qResultText"></p>
+      <div id="qWrongWrap" hidden>
+        <span class="label">틀린 단어</span>
+        <ul class="words" id="qWrongList"></ul>
+      </div>
+      <div class="row end">
+        <button class="btn" id="qRetryWrong" type="button" hidden>틀린 것만 다시</button>
+        <button class="btn primary" id="qAgain" type="button">새 퀴즈</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(() => {
+  "use strict";
+
+  /* =========================================================
+   * 유틸
+   * ========================================================= */
+  const $ = (id) => document.getElementById(id);
+  const norm = (s) => String(s ?? "").normalize("NFC").trim().replace(/\s+/g, " ");
+  const keyOf = (w) => norm(w).toLowerCase();
+  const rid = (p) => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const shuffle = (a) => { const r = a.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; };
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const MAX_FIELD = 500;           // 셀 하나당 최대 글자 수 (과도하게 긴 셀 방지)
+  const MAX_ROWS = 5000;           // 한 번에 가져올 최대 행 수
+
+  /** 태그 문자열 → 배열 ("토익, Day3 / #명사" → ["토익","Day3","명사"]) */
+  function parseTags(s) {
+    const out = [];
+    String(s ?? "").split(/[,;/|]+/).forEach((t) => {
+      const v = norm(t).replace(/^#/, "").slice(0, 40);
+      if (v && !out.includes(v)) out.push(v);
+    });
+    return out;
+  }
+  function el(tag, props = {}, ...kids) {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(props)) {
+      if (k === "class") n.className = v; else if (k === "text") n.textContent = v;
+      else if (k.startsWith("on")) n.addEventListener(k.slice(2), v); else n.setAttribute(k, v);
+    }
+    kids.flat().forEach((c) => c != null && n.append(c));
+    return n;
+  }
+  /** 예문 안의 단어를 형광펜으로 표시 (retain → retained 도 표시). DOM 노드로 만들어 XSS 안전 */
+  function highlight(text, word) {
+    const frag = document.createDocumentFragment();
+    if (!text) return frag;
+    // 표현 틀("When it comes to ~", "Let me see… / Let me think…")에서 고정된 부분만 뽑아 표시
+    let parts = norm(word).replace(/\(.*?\)/g, " ").split(/\s*[\/+]\s*/)
+      .flatMap((p) => p.split(/~|…|\.\.\./))
+      .map((s) => s.replace(/^[\s,.!?;:—–-]+|[\s,.!?;:—–-]+$/g, ""))
+      .filter((s) => s.length >= 2 && /[A-Za-z]/.test(s));
+    if (parts.length > 1) parts = parts.filter((s) => s.length >= 4); // 여러 조각이면 "The" 같은 짧은 조각은 제외
+    if (!parts.length) { frag.append(text); return frag; }
+    parts.sort((a, b) => b.length - a.length);
+    const src = parts.map((p) => {
+      const esc = p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/'/g, "['’]");
+      return /^[A-Za-z'-]+$/.test(p) ? `\\b${esc}[a-z]*` : `\\b${esc}`;
+    }).join("|");
+    let re;
+    try { re = new RegExp(src, "gi"); } catch { frag.append(text); return frag; }
+    let last = 0, m;
+    while ((m = re.exec(text))) {
+      if (m.index > last) frag.append(text.slice(last, m.index));
+      frag.append(el("mark", { text: m[0] }));
+      last = m.index + m[0].length;
+      if (m[0].length === 0) re.lastIndex++;
+    }
+    if (last < text.length) frag.append(text.slice(last));
+    return frag;
+  }
+  function showMsg(node, text, kind) {
+    node.textContent = text; node.className = "msg " + (kind || "ok"); node.hidden = !text;
+  }
+
+  /* =========================================================
+   * 저장소 — GitHub 저장소의 JSON 파일 하나 (data/words.json)
+   *
+   * 파일 형식: { "version": 1, "words": { "<id>": { w, m, e, t, c } } }
+   *   w=단어, m=뜻, e=예문, t=태그 배열, c=추가 시각(ms)
+   *
+   * 모드
+   *  - "gh"       : 토큰 있음 → GitHub API로 읽고 씀 (Contents API)
+   *  - "readonly" : 토큰 없음 → 같은 사이트의 data/words.json을 읽기만 함 (GitHub Pages)
+   *  - "offline"  : 네트워크 실패 → 이 기기에 캐시된 마지막 데이터를 보여 줌 (읽기 전용)
+   *
+   * 동시 수정 처리: 쓸 때 마지막으로 읽은 파일의 sha를 함께 보냄.
+   * 다른 기기가 먼저 바꿨다면 GitHub가 409를 돌려주므로, 최신 파일을 다시 읽고
+   * 같은 변경(mutator)을 다시 적용해 저장함 → 다른 기기의 변경을 덮어쓰지 않음.
+   * ========================================================= */
+  const CFG_KEY = "vocab.gh.config.v1";   // { repo, branch, token } — 이 기기에만 저장
+  const CACHE_KEY = "vocab.gh.cache.v1";  // { doc, sha, at } — 빠른 첫 화면/오프라인용
+  const DATA_PATH = "data/words.json";
+  const API = "https://api.github.com";
+
+  const lsGet = (k) => { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch { return null; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } };
+  const lsDel = (k) => { try { localStorage.removeItem(k); } catch { /* 무시 */ } };
+
+  /** UTF-8 안전 base64 (한글 포함). 큰 문자열도 처리하도록 나눠서 변환 */
+  function b64encode(str) {
+    const u8 = new TextEncoder().encode(str);
+    let bin = "";
+    for (let i = 0; i < u8.length; i += 0x8000) bin += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+    return btoa(bin);
+  }
+  function b64decode(b64) {
+    const bin = atob(String(b64).replace(/\s/g, ""));
+    const u8 = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    return new TextDecoder().decode(u8);
+  }
+
+  /** GitHub Pages 주소에서 저장소 추측: myname.github.io/vocab → myname/vocab */
+  function guessRepo() {
+    const m = location.hostname.match(/^([a-z0-9-]+)\.github\.io$/i);
+    if (!m) return "";
+    const seg = location.pathname.split("/").filter(Boolean)[0];
+    return seg && !/\.html?$/i.test(seg) ? `${m[1]}/${seg}` : `${m[1]}/${m[1]}.github.io`;
+  }
+
+  /** 받은 JSON을 검증·정리. 이상한 항목은 버리고 형식을 맞춤 */
+  function sanitizeDoc(obj) {
+    const words = {};
+    const src = obj && typeof obj === "object" && obj.words && typeof obj.words === "object" ? obj.words : {};
+    for (const [id, e] of Object.entries(src)) {
+      if (!e || typeof e !== "object") continue;
+      const w = norm(e.w).slice(0, MAX_FIELD), m = norm(e.m).slice(0, MAX_FIELD);
+      if (!w || !m || !/^[\w-]{1,64}$/.test(id)) continue;
+      words[id] = { w, m, e: norm(e.e).slice(0, MAX_FIELD), t: Array.isArray(e.t) ? e.t.map((x) => norm(x).slice(0, 40)).filter(Boolean) : [], c: Number(e.c) || 0 };
+    }
+    return { version: 1, words };
+  }
+
+  /** 단어 하나당 한 줄로 저장 → GitHub에서 변경 내역(diff)을 읽기 쉬움 */
+  function serialize(doc) {
+    const ids = Object.keys(doc.words).sort((a, b) => (doc.words[a].c || 0) - (doc.words[b].c || 0) || a.localeCompare(b));
+    if (!ids.length) return '{\n"version": 1,\n"words": {}\n}\n';
+    return '{\n"version": 1,\n"words": {\n' + ids.map((id) => JSON.stringify(id) + ": " + JSON.stringify(doc.words[id])).join(",\n") + "\n}\n}\n";
+  }
+
+  class GhError extends Error { constructor(msg, status) { super(msg); this.status = status; } }
+
+  const Store = {
+    mode: "loading",
+    doc: { version: 1, words: {} },
+    sha: null,              // 마지막으로 읽은 파일의 sha (없으면 아직 파일이 없음)
+    cfg: { repo: "", branch: "main", token: "" },
+    lastSync: 0,
+    busy: 0,                // 진행 중인 쓰기 수 (쓰는 중에는 자동 새로고침 안 함)
+    error: "",
+    listeners: [],
+
+    words() {
+      return Object.entries(this.doc.words).map(([id, e]) => ({ ...e, id })).sort((a, b) => (b.c || 0) - (a.c || 0));
+    },
+    emit() { this.listeners.forEach((f) => f()); },
+    canWrite() { return this.mode === "gh"; },
+
+    loadConfig() {
+      const c = lsGet(CFG_KEY) || {};
+      this.cfg = { repo: c.repo || guessRepo(), branch: c.branch || "main", token: c.token || "" };
+    },
+    saveConfig(c) {
+      this.cfg = { repo: c.repo.trim().replace(/^https?:\/\/github\.com\//i, "").replace(/\.git$/i, "").replace(/\/+$/, ""), branch: (c.branch || "main").trim(), token: (c.token || "").trim() };
+      if (!lsSet(CFG_KEY, this.cfg)) throw new Error("이 기기에 설정을 저장할 수 없어요. 개인정보 보호(비공개) 모드인지 확인하세요.");
+    },
+
+    /** GitHub API 호출 공통 처리. 오류는 사람이 읽을 수 있는 메시지로 바꿈 */
+    async api(path, opts = {}) {
+      const { repo, token } = this.cfg;
+      let res;
+      try {
+        res = await fetch(`${API}/repos/${repo}${path}`, {
+          ...opts, cache: "no-store",
+          headers: { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(opts.headers || {}) },
+        });
+      } catch { throw new GhError("GitHub에 연결하지 못했어요. 인터넷 연결을 확인하세요.", 0); }
+      if (res.ok) return res;
+      let detail = "";
+      try { detail = (await res.json()).message || ""; } catch { /* 본문 없음 */ }
+      const s = res.status;
+      if (s === 401) throw new GhError("토큰이 올바르지 않거나 만료됐어요. ⚙ 설정에서 새 토큰을 넣어 주세요.", s);
+      if (s === 403 && /rate limit/i.test(detail)) throw new GhError("GitHub 요청 한도를 넘었어요. 잠시 후 다시 시도하세요.", s);
+      if (s === 403) throw new GhError("이 토큰에는 쓰기 권한이 없어요. 토큰의 Contents 권한을 ‘Read and write’로 설정하세요.", s);
+      if (s === 404) throw new GhError("저장소나 파일을 찾지 못했어요. 저장소 이름과 토큰의 저장소 선택을 확인하세요.", s);
+      if (s === 409 || (s === 422 && /sha/i.test(detail))) throw new GhError("conflict", 409);
+      throw new GhError(`GitHub 오류 (${s}) ${detail}`.trim(), s);
+    },
+
+    /** 최신 파일 읽기. 토큰이 있으면 API, 없으면 같은 사이트의 정적 파일 */
+    async fetchRemote() {
+      if (this.cfg.token && this.cfg.repo) {
+        const ref = encodeURIComponent(this.cfg.branch);
+        let meta;
+        try { meta = await (await this.api(`/contents/${DATA_PATH}?ref=${ref}`)).json(); }
+        catch (e) {
+          // 파일이 아직 없으면 빈 단어장으로 시작 (첫 저장 때 만들어짐). 저장소 자체가 없으면 그대로 오류
+          if (e.status === 404) { await this.api(""); return { doc: { version: 1, words: {} }, sha: null }; }
+          throw e;
+        }
+        let text;
+        if (meta.content && meta.encoding === "base64") text = b64decode(meta.content);
+        else {
+          // 1MB가 넘는 파일은 content가 비어서 오므로 raw로 다시 받음
+          text = await (await this.api(`/contents/${DATA_PATH}?ref=${ref}`, { headers: { Accept: "application/vnd.github.raw+json" } })).text();
+        }
+        let parsed;
+        try { parsed = JSON.parse(text); } catch { throw new GhError("words.json 파일 형식이 깨졌어요. GitHub에서 파일 내용을 확인하세요.", 0); }
+        return { doc: sanitizeDoc(parsed), sha: meta.sha };
+      }
+      // 읽기 전용: GitHub Pages에 올라간 파일 (반영까지 1~2분 걸릴 수 있음)
+      let res;
+      try { res = await fetch(`${DATA_PATH}?t=${Date.now()}`, { cache: "no-store" }); }
+      catch { throw new GhError("단어장 파일을 불러오지 못했어요. 인터넷 연결을 확인하세요.", 0); }
+      if (res.status === 404) return { doc: { version: 1, words: {} }, sha: null };
+      if (!res.ok) throw new GhError(`단어장 파일을 불러오지 못했어요 (${res.status}).`, res.status);
+      try { return { doc: sanitizeDoc(await res.json()), sha: null }; }
+      catch { throw new GhError("words.json 파일 형식이 깨졌어요.", 0); }
+    },
+
+    async init() {
+      this.loadConfig();
+      // 1) 캐시를 먼저 보여 줘서 첫 화면을 빠르게
+      const cache = lsGet(CACHE_KEY);
+      if (cache?.doc) { this.doc = sanitizeDoc(cache.doc); this.sha = cache.sha || null; this.lastSync = cache.at || 0; this.emit(); }
+      await this.reload();
+    },
+
+    /** GitHub에서 다시 불러오기. 실패하면 캐시로 보여 주고 오프라인 모드 */
+    async reload() {
+      if (this.busy) return;
+      try {
+        const { doc, sha } = await this.fetchRemote();
+        this.doc = doc; this.sha = sha; this.lastSync = Date.now(); this.error = "";
+        this.mode = this.cfg.token && this.cfg.repo ? "gh" : "readonly";
+        lsSet(CACHE_KEY, { doc, sha, at: this.lastSync });
+      } catch (e) {
+        this.error = e.message;
+        this.mode = "offline";
+      }
+      this.emit();
+    },
+
+    /**
+     * 변경 저장. mutator(doc)는 doc.words를 직접 고치는 함수이며,
+     * 충돌 시 최신 파일에 다시 적용되므로 여러 번 실행돼도 같은 결과가 나와야 함.
+     */
+    async commit(mutator, message, onProgress) {
+      if (!this.canWrite()) {
+        throw new Error(this.mode === "offline"
+          ? "지금은 GitHub에 연결되지 않아 저장할 수 없어요. ↻를 눌러 다시 연결해 보세요."
+          : "읽기 전용이에요. ⚙ 설정에서 토큰을 넣으면 단어를 추가·삭제할 수 있어요.");
+      }
+      this.busy++;
+      const before = { doc: this.doc, sha: this.sha };
+      try {
+        // 화면에는 바로 반영 (낙관적 업데이트)
+        const optimistic = structuredClone(this.doc); mutator(optimistic);
+        this.doc = optimistic; this.emit();
+        onProgress?.(0.2);
+        let base = before;
+        for (let attempt = 0; ; attempt++) {
+          const next = structuredClone(base.doc); mutator(next);
+          const body = { message, content: b64encode(serialize(next)), branch: this.cfg.branch };
+          if (base.sha) body.sha = base.sha;
+          try {
+            const res = await (await this.api(`/contents/${DATA_PATH}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })).json();
+            this.doc = next; this.sha = res.content?.sha || null; this.lastSync = Date.now();
+            lsSet(CACHE_KEY, { doc: next, sha: this.sha, at: this.lastSync });
+            onProgress?.(1);
+            return;
+          } catch (e) {
+            if (e.status === 409 && attempt < 3) {
+              // 다른 기기가 먼저 저장함 → 최신 파일을 받아서 같은 변경을 다시 적용
+              base = await this.fetchRemote();
+              onProgress?.(0.4 + attempt * 0.15);
+              continue;
+            }
+            if (e.status === 409) throw new Error("다른 기기와 동시에 저장하느라 실패했어요. 잠시 후 다시 시도하세요.");
+            throw e;
+          }
+        }
+      } catch (e) {
+        // 실패하면 화면을 저장 전 상태로 되돌림
+        this.doc = before.doc; this.sha = before.sha;
+        throw e;
+      } finally {
+        this.busy--;
+        this.emit();
+      }
+    },
+
+    /** entries: [{id?, w, m, e, t, c?}] — id가 있으면 수정, 없으면 새로 추가 */
+    async upsert(entries, onProgress) {
+      const now = Date.now();
+      // id는 미리 정해 둠 → 충돌로 다시 적용해도 같은 단어가 두 번 생기지 않음
+      const fixed = entries.map((en, i) => ({ id: en.id || rid("w"), isNew: !en.id, rec: { w: en.w, m: en.m, e: en.e || "", t: en.t || [], c: en.c || now + i } }));
+      const mutator = (doc) => {
+        const byKey = new Map(Object.entries(doc.words).map(([id, e]) => [keyOf(e.w), id]));
+        for (const f of fixed) {
+          // 새 단어인데 다른 기기에서 같은 단어를 먼저 넣었다면 그 항목을 갱신
+          const other = f.isNew ? byKey.get(keyOf(f.rec.w)) : null;
+          if (other && other !== f.id) doc.words[other] = { ...f.rec, c: doc.words[other].c || f.rec.c };
+          else { doc.words[f.id] = f.rec; byKey.set(keyOf(f.rec.w), f.id); }
+        }
+      };
+      const added = fixed.filter((f) => f.isNew).length, changed = fixed.length - added;
+      const msg = fixed.length === 1 ? `${added ? "단어 추가" : "단어 수정"}: ${fixed[0].rec.w}` : `단어 ${added}개 추가${changed ? `, ${changed}개 수정` : ""}`;
+      await this.commit(mutator, msg, onProgress);
+    },
+
+    async remove(ids) {
+      const set = new Set(ids);
+      const names = ids.map((id) => this.doc.words[id]?.w).filter(Boolean);
+      await this.commit((doc) => { for (const id of set) delete doc.words[id]; },
+        names.length === 1 ? `단어 삭제: ${names[0]}` : `단어 ${ids.length}개 삭제`);
+    },
+  };
+
+  function setNote(text, warn) { const n = $("storeNote"); n.textContent = text; n.classList.toggle("warn", !!warn); }
+
+  /* =========================================================
+   * 탭
+   * ========================================================= */
+  let activeTab = "list";
+  document.querySelectorAll("nav.tabs button").forEach((b) => b.addEventListener("click", () => {
+    activeTab = b.dataset.tab;
+    document.querySelectorAll("nav.tabs button").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
+    ["list", "card", "quiz"].forEach((t) => { $("panel-" + t).hidden = t !== activeTab; });
+    if (activeTab === "card") buildDeck(false);
+    if (activeTab === "quiz") fillTagSelect($("qTag"));
+  }));
+  function segControl(root, onChange) {
+    root.addEventListener("click", (ev) => {
+      const b = ev.target.closest("button"); if (!b) return;
+      root.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      onChange(b.dataset.v);
+    });
+    return () => root.querySelector('[aria-pressed="true"]').dataset.v;
+  }
+
+  /* =========================================================
+   * 태그 집계
+   * ========================================================= */
+  function tagCounts(words) {
+    const m = new Map();
+    words.forEach((w) => (w.t || []).forEach((t) => m.set(t, (m.get(t) || 0) + 1)));
+    return [...m].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  }
+  function fillTagSelect(sel) {
+    const words = Store.words(), prev = sel.value;
+    sel.replaceChildren(el("option", { value: "", text: `전체 (${words.length})` }),
+      ...tagCounts(words).map(([t, n]) => el("option", { value: t, text: `${t} (${n})` })));
+    if ([...sel.options].some((o) => o.value === prev)) sel.value = prev;
+  }
+  const byTag = (words, tag) => tag ? words.filter((w) => (w.t || []).includes(tag)) : words;
+
+  /* =========================================================
+   * 단어 목록
+   * ========================================================= */
+  let listTag = "", listLimit = 150, pendingDelete = null;
+  function renderList() {
+    const all = Store.words();
+    $("statWords").textContent = all.length.toLocaleString();
+    const tags = tagCounts(all);
+    $("statTags").textContent = tags.length;
+    if (listTag && !tags.some(([t]) => t === listTag)) listTag = "";
+
+    const chips = $("tagChips");
+    chips.replaceChildren();
+    if (tags.length) {
+      const mk = (label, val, n) => el("button", { class: "chip", type: "button", "aria-pressed": String(listTag === val), onclick: () => { listTag = val; listLimit = 150; renderList(); } }, label, n != null ? el("small", { text: String(n) }) : null);
+      chips.append(mk("전체", "", all.length), ...tags.slice(0, 30).map(([t, n]) => mk(t, t, n)));
+    }
+    $("bulkRow").hidden = !listTag;
+    if (listTag) { $("bulkText").textContent = `‘${listTag}’ 태그 ${tags.find(([t]) => t === listTag)?.[1] || 0}개`; }
+
+    const q = keyOf($("search").value);
+    let rows = byTag(all, listTag);
+    if (q) rows = rows.filter((w) => keyOf(w.w).includes(q) || keyOf(w.m).includes(q));
+
+    $("listEmpty").hidden = all.length > 0 || Store.mode === "loading";
+    $("noMatch").hidden = !(all.length > 0 && rows.length === 0);
+    const ul = $("wordList");
+    ul.replaceChildren(...rows.slice(0, listLimit).map(wordRow));
+    $("moreBtn").hidden = rows.length <= listLimit;
+    $("moreBtn").textContent = `더 보기 (${(rows.length - listLimit).toLocaleString()}개 남음)`;
+  }
+  function wordRow(w) {
+    const act = el("div", { class: "w-act" });
+    if (pendingDelete === w.id) {
+      act.append(el("button", { class: "btn small danger solid", type: "button", text: "삭제", onclick: async () => { pendingDelete = null; try { await Store.remove([w.id]); } catch (e) { showMsg($("importMsg"), e.message, "err"); } } }),
+        el("button", { class: "btn small", type: "button", text: "취소", onclick: () => { pendingDelete = null; renderList(); } }));
+    } else {
+      act.append(el("button", { class: "btn small", type: "button", "aria-label": `${w.w} 삭제`, text: "삭제", onclick: () => { pendingDelete = w.id; renderList(); } }));
+    }
+    return el("li", {},
+      el("div", { class: "w-head" }, el("span", { class: "w-word", text: w.w }), el("span", { class: "w-mean", text: w.m })),
+      act,
+      w.e ? el("p", { class: "w-ex" }, highlight(w.e, w.w)) : null,
+      (w.t && w.t.length) ? el("div", { class: "w-tags" }, w.t.map((t) => el("span", { text: t }))) : null);
+  }
+  $("search").addEventListener("input", () => { listLimit = 150; renderList(); });
+  $("moreBtn").addEventListener("click", () => { listLimit += 300; renderList(); });
+  $("bulkDel").addEventListener("click", () => { $("bulkDel").hidden = true; $("bulkConfirm").hidden = false; });
+  $("bulkNo").addEventListener("click", () => { $("bulkDel").hidden = false; $("bulkConfirm").hidden = true; });
+  $("bulkYes").addEventListener("click", async () => {
+    $("bulkDel").hidden = false; $("bulkConfirm").hidden = true;
+    const ids = byTag(Store.words(), listTag).map((w) => w.id);
+    const tag = listTag; listTag = "";
+    try { await Store.remove(ids); showMsg($("importMsg"), `‘${tag}’ 태그 단어 ${ids.length}개를 삭제했어요.`, "ok"); }
+    catch (e) { showMsg($("importMsg"), e.message, "err"); }
+  });
+
+  /* =========================================================
+   * 직접 추가 / 예시 단어
+   * ========================================================= */
+  $("manualForm").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const w = norm($("mWord").value).slice(0, MAX_FIELD), m = norm($("mMean").value).slice(0, MAX_FIELD);
+    if (!w || !m) { showMsg($("manualMsg"), "단어와 뜻을 모두 입력하세요.", "err"); return; }
+    const exists = Store.words().find((x) => keyOf(x.w) === keyOf(w));
+    const entry = { w, m, e: norm($("mEx").value).slice(0, MAX_FIELD), t: parseTags($("mTag").value) };
+    if (exists) { entry.id = exists.id; entry.c = exists.c; }
+    try {
+      await Store.upsert([entry]);
+      showMsg($("manualMsg"), exists ? `‘${w}’의 내용을 새로 바꿨어요.` : `‘${w}’를 추가했어요.`, "ok");
+      ["mWord", "mMean", "mEx"].forEach((id) => ($(id).value = "")); $("mWord").focus();
+    } catch (e) { showMsg($("manualMsg"), e.message, "err"); }
+  });
+  const SAMPLES = [
+    ["resilient", "회복력 있는", "She stayed resilient after the setback."],
+    ["meticulous", "꼼꼼한", "He keeps meticulous notes in every meeting."],
+    ["leverage", "(자원 등을) 활용하다", "We can leverage our existing data to improve targeting."],
+    ["concise", "간결한", "Keep your answer concise and clear."],
+    ["retain", "유지하다, 보유하다", "The campaign helped us retain loyal customers."],
+    ["ambiguous", "모호한", "The instructions were ambiguous, so I asked again."],
+    ["postpone", "연기하다", "They decided to postpone the launch until May."],
+    ["insight", "통찰, 인사이트", "The report gave us a useful insight into user behavior."],
+  ];
+  $("btnSample").addEventListener("click", async () => {
+    $("btnSample").disabled = true;
+    try { await Store.upsert(SAMPLES.map(([w, m, e]) => ({ w, m, e, t: ["예시"] }))); showMsg($("importMsg"), "예시 단어 8개를 넣었어요. ‘예시’ 태그로 한 번에 지울 수 있어요.", "ok"); }
+    catch (e) { showMsg($("importMsg"), e.message, "err"); }
+    $("btnSample").disabled = false;
+  });
+
+  /* =========================================================
+   * 엑셀 가져오기
+   * ========================================================= */
+  const HEADER = {
+    w: ["단어", "영어", "영단어", "word", "words", "english", "term", "vocabulary", "voca"],
+    m: ["뜻", "의미", "한국어", "해석", "meaning", "meanings", "korean", "definition", "뜻풀이"],
+    e: ["예문", "example", "examples", "sentence", "예시", "문장"],
+    t: ["태그", "tag", "tags", "분류", "category", "그룹", "group", "day"],
+  };
+  let wb = null, parsed = null, fileBase = "";
+
+  const drop = $("drop");
+  ["dragenter", "dragover"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave", "drop"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
+  drop.addEventListener("drop", (e) => { const f = e.dataTransfer?.files?.[0]; if (f) readFile(f); });
+  $("fileInput").addEventListener("change", (e) => { const f = e.target.files?.[0]; if (f) readFile(f); e.target.value = ""; });
+
+  async function readFile(file) {
+    $("importMsg").hidden = true;
+    if (typeof XLSX === "undefined") { showMsg($("importMsg"), "엑셀 읽기 도구를 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침하세요.", "err"); return; }
+    if (!/\.(xlsx|xls|csv)$/i.test(file.name)) { showMsg($("importMsg"), "지원하지 않는 파일이에요. .xlsx, .xls, .csv 파일을 올려 주세요.", "err"); return; }
+    if (file.size > 10 * 1024 * 1024) { showMsg($("importMsg"), "파일이 10MB보다 커요. 단어 부분만 남겨서 다시 올려 주세요.", "err"); return; }
+    try {
+      const buf = await file.arrayBuffer();
+      if (/\.csv$/i.test(file.name)) {
+        // 엑셀에서 저장한 CSV는 CP949(EUC-KR)인 경우가 많아 UTF-8 실패 시 EUC-KR로 다시 읽음
+        let text;
+        try { text = new TextDecoder("utf-8", { fatal: true }).decode(buf); }
+        catch { text = new TextDecoder("euc-kr").decode(buf); }
+        wb = XLSX.read(text.replace(/^﻿/, ""), { type: "string", raw: true });
+      } else {
+        wb = XLSX.read(buf, { type: "array" });
+      }
+    } catch {
+      showMsg($("importMsg"), "파일을 열지 못했어요. 비밀번호가 걸려 있거나 손상된 파일인지 확인하세요.", "err"); return;
+    }
+    fileBase = file.name.replace(/\.[^.]+$/, "");
+    const sel = $("pvSheet");
+    sel.replaceChildren(...wb.SheetNames.map((n) => el("option", { value: n, text: n })));
+    sel.hidden = wb.SheetNames.length < 2;
+    $("pvFile").textContent = file.name;
+    $("pvTag").value = /^(sheet|시트|book|통합 문서)\d*$/i.test(fileBase) ? "" : fileBase.slice(0, 40);
+    parseSheet(wb.SheetNames[0]);
+  }
+  $("pvSheet").addEventListener("change", (e) => parseSheet(e.target.value));
+
+  /** 시트 → 단어 행. 첫 줄이 제목이면 열 위치를 제목으로 찾고, 아니면 A~D 순서로 읽음 */
+  function parseSheet(name) {
+    const ws = wb.Sheets[name];
+    const rows = ws ? XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", raw: false, blankrows: false }) : [];
+    let map = { w: 0, m: 1, e: 2, t: 3 }, start = 0;
+    const head = (rows[0] || []).map((c) => keyOf(c));
+    const found = {};
+    for (const [k, names] of Object.entries(HEADER)) { const i = head.findIndex((h) => names.includes(h)); if (i >= 0) found[k] = i; }
+    if (found.w != null || found.m != null) {
+      start = 1;
+      map = { w: found.w ?? 0, m: found.m ?? (found.w === 1 ? 0 : 1), e: found.e ?? -1, t: found.t ?? -1 };
+    }
+    const existing = new Map(Store.words().map((w) => [keyOf(w.w), w]));
+    const inFile = new Map();
+    let bad = 0, truncated = false;
+    for (let r = start; r < rows.length; r++) {
+      if (inFile.size >= MAX_ROWS) { truncated = true; break; }
+      const row = rows[r];
+      const cell = (i) => (i >= 0 ? norm(row[i]).slice(0, MAX_FIELD) : "");
+      const w = cell(map.w), m = cell(map.m);
+      if (!w && !m) continue;               // 빈 줄
+      if (!w || !m) { bad++; continue; }    // 단어나 뜻이 빠진 줄
+      const k = keyOf(w);
+      // 같은 파일 안에 같은 단어가 또 있으면 아래 줄 내용으로 합침 (태그는 합집합)
+      const prev = inFile.get(k);
+      const t = parseTags(cell(map.t));
+      inFile.set(k, { w, m, e: cell(map.e) || prev?.e || "", t: prev ? [...new Set([...prev.t, ...t])] : t, dup: existing.get(k) || null });
+    }
+    parsed = { items: [...inFile.values()], bad, truncated };
+    renderPreview();
+  }
+  function renderPreview() {
+    const { items, bad, truncated } = parsed;
+    const dups = items.filter((i) => i.dup).length;
+    $("pvNew").textContent = (items.length - dups).toLocaleString();
+    $("pvDup").textContent = dups.toLocaleString();
+    $("pvBad").textContent = bad.toLocaleString();
+    $("pvDupPolicy").hidden = dups === 0;
+    $("pvRows").replaceChildren(...items.slice(0, 6).map((i) => el("tr", {},
+      el("td", {}, i.w, i.dup ? el("span", { class: "tag-dup", text: " · 이미 있음" }) : null),
+      el("td", { text: i.m }), el("td", { text: i.e }), el("td", { text: i.t.join(", ") }))));
+    $("pvMore").textContent = items.length > 6 ? `외 ${(items.length - 6).toLocaleString()}개` : (items.length === 0 ? "추가할 단어를 찾지 못했어요. A열에 단어, B열에 뜻이 있는지 확인하세요." : "");
+    if (truncated) $("pvMore").textContent += ` · 한 번에 ${MAX_ROWS.toLocaleString()}개까지만 가져와요. 나머지는 파일을 나눠 올려 주세요.`;
+    $("pvApply").disabled = items.length === 0;
+    $("importPreview").hidden = false;
+    $("pvProg").hidden = true;
+  }
+  $("pvCancel").addEventListener("click", () => { $("importPreview").hidden = true; parsed = null; });
+  $("pvApply").addEventListener("click", async () => {
+    if (!parsed) return;
+    const policy = $("dupOver").checked ? "overwrite" : "skip";
+    const extra = parseTags($("pvTag").value);
+    const entries = []; let skipped = 0, updated = 0;
+    for (const it of parsed.items) {
+      const t = [...new Set([...it.t, ...extra])];
+      if (it.dup) {
+        if (policy === "skip") { skipped++; continue; }
+        entries.push({ id: it.dup.id, c: it.dup.c, w: it.w, m: it.m, e: it.e || it.dup.e, t: [...new Set([...(it.dup.t || []), ...t])] });
+        updated++;
+      } else entries.push({ w: it.w, m: it.m, e: it.e, t });
+    }
+    if (!entries.length) { showMsg($("importMsg"), "새로 추가할 단어가 없어요. 모두 이미 있는 단어예요.", "ok"); $("importPreview").hidden = true; return; }
+    $("pvApply").disabled = true; $("pvCancel").disabled = true;
+    const prog = $("pvProg"); prog.hidden = false; prog.firstElementChild.style.width = "0";
+    try {
+      await Store.upsert(entries, (p) => { prog.firstElementChild.style.width = Math.round(p * 100) + "%"; });
+      const added = entries.length - updated;
+      const parts = [`${added.toLocaleString()}개 추가`];
+      if (updated) parts.push(`${updated}개 수정`);
+      if (skipped) parts.push(`${skipped}개 건너뜀`);
+      if (parsed.bad) parts.push(`${parsed.bad}줄 제외`);
+      showMsg($("importMsg"), `완료: ${parts.join(" · ")}`, "ok");
+      $("importPreview").hidden = true; parsed = null;
+    } catch (e) {
+      showMsg($("importMsg"), e.message, "err");
+    } finally { $("pvApply").disabled = false; $("pvCancel").disabled = false; }
+  });
+
+  /** 표(2차원 배열)를 .xlsx로 내려받기 */
+  function downloadXlsx(filename, aoa, cols) {
+    if (typeof XLSX === "undefined") throw new Error("엑셀 도구를 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침하세요.");
+    const sheet = XLSX.utils.aoa_to_sheet(aoa);
+    sheet["!cols"] = cols;
+    const book = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(book, sheet, "단어");
+    const data = XLSX.write(book, { bookType: "xlsx", type: "array" });
+    const url = URL.createObjectURL(new Blob([data], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+    const a = el("a", { href: url, download: filename });
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+  }
+  const XLSX_COLS = [{ wch: 16 }, { wch: 22 }, { wch: 50 }, { wch: 14 }];
+
+  $("btnTemplate").addEventListener("click", () => {
+    try {
+      downloadXlsx("단어장_양식.xlsx", [["단어", "뜻", "예문", "태그"], ...SAMPLES.slice(0, 3).map(([w, m, e]) => [w, m, e, "Day1"])], XLSX_COLS);
+      showMsg($("tplMsg"), "양식을 받았어요. 예시 3줄을 지우고 단어를 채워 올리세요.", "ok");
+    } catch (e) { showMsg($("tplMsg"), e.message, "err"); }
+  });
+  $("btnExport").addEventListener("click", () => {
+    const words = Store.words().reverse(); // 추가순
+    if (!words.length) { showMsg($("tplMsg"), "내보낼 단어가 없어요.", "err"); return; }
+    try {
+      const d = new Date(), ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+      downloadXlsx(`단어장_${ymd}.xlsx`, [["단어", "뜻", "예문", "태그"], ...words.map((w) => [w.w, w.m, w.e || "", (w.t || []).join(", ")])], XLSX_COLS);
+      showMsg($("tplMsg"), `단어 ${words.length.toLocaleString()}개를 내보냈어요.`, "ok");
+    } catch (e) { showMsg($("tplMsg"), e.message, "err"); }
+  });
+
+  /* =========================================================
+   * 플래시카드
+   * ========================================================= */
+  let deck = [], deckPos = 0, flipped = false;
+  const cFront = segControl($("cFront"), () => renderCard());
+  const cOrder = segControl($("cOrder"), () => buildDeck(true));
+  $("cTag").addEventListener("change", () => buildDeck(true));
+
+  /** reset=false면 현재 보던 카드 위치를 최대한 유지 (데이터가 바뀌어도) */
+  function buildDeck(reset) {
+    fillTagSelect($("cTag"));
+    const curId = deck[deckPos]?.id;
+    const pool = byTag(Store.words(), $("cTag").value).slice().reverse(); // 추가순(오래된 것부터)
+    if (!reset && deck.length) {
+      const ids = new Set(pool.map((w) => w.id)), map = new Map(pool.map((w) => [w.id, w]));
+      const kept = deck.filter((w) => ids.has(w.id)).map((w) => map.get(w.id));
+      const known = new Set(kept.map((w) => w.id));
+      deck = kept.concat(pool.filter((w) => !known.has(w.id)));
+      const i = deck.findIndex((w) => w.id === curId); deckPos = i >= 0 ? i : Math.min(deckPos, Math.max(0, deck.length - 1));
+    } else {
+      deck = cOrder() === "rnd" ? shuffle(pool) : pool; deckPos = 0; flipped = false;
+    }
+    renderCard();
+  }
+  function renderCard() {
+    const has = deck.length > 0;
+    $("cardArea").hidden = !has; $("cardEmpty").hidden = has;
+    if (!has) return;
+    const w = deck[deckPos], wordFirst = cFront() === "w";
+    const wordNode = () => el("div", { class: "big", text: w.w });
+    const meanNode = () => el("div", { class: "mean", text: w.m });
+    $("cFrontBody").replaceChildren(wordFirst ? wordNode() : meanNode());
+    $("cBackBody").replaceChildren(wordFirst ? meanNode() : wordNode(), w.e ? el("div", { class: "ex" }, highlight(w.e, w.w)) : null);
+    const corner = (w.t || []).join(" · ");
+    $("cCornerF").textContent = corner; $("cCornerB").textContent = corner;
+    $("fcard").classList.toggle("flipped", flipped);
+    $("cCount").textContent = `${deckPos + 1} / ${deck.length}`;
+    $("cPrev").disabled = deckPos === 0;
+    $("cNext").textContent = deckPos === deck.length - 1 ? "처음으로" : "다음 →";
+  }
+  const flip = () => { flipped = !flipped; $("fcard").classList.toggle("flipped", flipped); };
+  const go = (d) => { if (!deck.length) return; deckPos = (deckPos + d + deck.length) % deck.length; flipped = false; renderCard(); };
+  $("fcard").addEventListener("click", flip);
+  $("cPrev").addEventListener("click", () => deckPos > 0 && go(-1));
+  $("cNext").addEventListener("click", () => go(1));
+  document.addEventListener("keydown", (e) => {
+    if (activeTab !== "card" || /INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName || "")) return;
+    if (e.key === "ArrowRight") { e.preventDefault(); go(1); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); if (deckPos > 0) go(-1); }
+    else if ((e.key === " " || e.key === "Enter") && document.activeElement !== $("fcard")) { e.preventDefault(); flip(); }
+  });
+  let tx = null; // 휴대폰 좌우 스와이프
+  $("fcard").addEventListener("touchstart", (e) => { tx = e.touches[0].clientX; }, { passive: true });
+  $("fcard").addEventListener("touchend", (e) => {
+    if (tx == null) return; const dx = e.changedTouches[0].clientX - tx; tx = null;
+    if (Math.abs(dx) > 60) { e.preventDefault(); dx < 0 ? go(1) : (deckPos > 0 && go(-1)); }
+  });
+
+  /* =========================================================
+   * 퀴즈 (4지선다)
+   * ========================================================= */
+  const qDir = segControl($("qDir"), () => {});
+  let quiz = null;
+  function makeQuestions(pool, all, dir, count) {
+    const ans = (w) => dir === "w2m" ? w.m : w.w;
+    const uniq = (list) => { const s = new Map(); list.forEach((w) => { const k = keyOf(ans(w)); if (!s.has(k)) s.set(k, w); }); return [...s.values()]; };
+    if (uniq(all).length < 4) return { error: "퀴즈를 만들려면 뜻이 서로 다른 단어가 4개 이상 필요해요." };
+    if (!pool.length) return { error: "이 범위에 단어가 없어요." };
+    const picks = shuffle(pool).slice(0, count > 0 ? count : pool.length);
+    return {
+      qs: picks.map((w) => {
+        const k = keyOf(ans(w));
+        // 오답 보기: 같은 범위에서 먼저 고르고, 모자라면 전체 단어에서 채움
+        const local = shuffle(uniq(pool).filter((x) => keyOf(ans(x)) !== k));
+        const global = shuffle(uniq(all).filter((x) => keyOf(ans(x)) !== k && !local.includes(x)));
+        const wrong = local.concat(global).slice(0, 3);
+        return { w, options: shuffle([w, ...wrong]).map(ans), answer: ans(w) };
+      }),
+    };
+  }
+  function startQuiz(pool) {
+    const all = Store.words();
+    const res = makeQuestions(pool, all, qDir(), Number($("qCount").value));
+    if (res.error) { showMsg($("qErr"), res.error, "err"); return; }
+    $("qErr").hidden = true;
+    quiz = { qs: res.qs, i: 0, right: 0, wrong: [], dir: qDir(), pool };
+    $("qSetup").hidden = true; $("qResult").hidden = true; $("qPlay").hidden = false;
+    renderQ();
+  }
+  function renderQ() {
+    const q = quiz.qs[quiz.i], w2m = quiz.dir === "w2m";
+    $("qPos").textContent = `${quiz.i + 1} / ${quiz.qs.length}`;
+    $("qScoreNow").textContent = `정답 ${quiz.right}`;
+    $("qBar").style.width = (quiz.i / quiz.qs.length * 100) + "%";
+    $("qPrompt").textContent = w2m ? q.w.w : q.w.m;
+    $("qPrompt").classList.toggle("ko", !w2m);
+    $("qExample").hidden = true; $("qNext").hidden = true;
+    $("qChoices").replaceChildren(...q.options.map((opt, n) => el("button", {
+      class: "choice" + (w2m ? "" : " en"), type: "button", onclick: (ev) => answer(ev.currentTarget, opt),
+    }, el("span", { class: "n", text: String(n + 1) }), el("span", { text: opt }))));
+  }
+  function answer(btn, opt) {
+    const q = quiz.qs[quiz.i];
+    if (q.done) return; q.done = true;
+    const ok = keyOf(opt) === keyOf(q.answer);
+    if (ok) quiz.right++; else quiz.wrong.push(q.w);
+    [...$("qChoices").children].forEach((b) => {
+      b.disabled = true;
+      const t = b.lastChild.textContent;
+      if (keyOf(t) === keyOf(q.answer)) b.classList.add("right"); else if (b === btn) b.classList.add("wrong");
+    });
+    $("qScoreNow").textContent = `정답 ${quiz.right}`;
+    if (q.w.e) { $("qExample").replaceChildren(highlight(q.w.e, q.w.w)); $("qExample").hidden = false; }
+    $("qNext").textContent = quiz.i === quiz.qs.length - 1 ? "결과 보기" : "다음 문제";
+    $("qNext").hidden = false; $("qNext").focus();
+  }
+  function finishQuiz() {
+    $("qPlay").hidden = true; $("qResult").hidden = false;
+    const n = quiz.qs.length;
+    $("qScore").replaceChildren(String(quiz.right), el("small", { text: ` / ${n}` }));
+    const pct = Math.round(quiz.right / n * 100);
+    $("qResultText").textContent = pct === 100 ? "모두 맞혔어요." : `정답률 ${pct}%`;
+    $("qWrongWrap").hidden = quiz.wrong.length === 0;
+    $("qRetryWrong").hidden = quiz.wrong.length === 0;
+    pendingDelete = null;
+    $("qWrongList").replaceChildren(...quiz.wrong.map((w) => el("li", {},
+      el("div", { class: "w-head" }, el("span", { class: "w-word", text: w.w }), el("span", { class: "w-mean", text: w.m })),
+      el("span"), w.e ? el("p", { class: "w-ex" }, highlight(w.e, w.w)) : null)));
+  }
+  $("qStart").addEventListener("click", () => startQuiz(byTag(Store.words(), $("qTag").value)));
+  $("qNext").addEventListener("click", () => { quiz.i++; quiz.i >= quiz.qs.length ? finishQuiz() : renderQ(); });
+  $("qQuit").addEventListener("click", () => { quiz = null; $("qPlay").hidden = true; $("qSetup").hidden = false; });
+  $("qAgain").addEventListener("click", () => { $("qResult").hidden = true; $("qSetup").hidden = false; fillTagSelect($("qTag")); });
+  $("qRetryWrong").addEventListener("click", () => { const pool = quiz.wrong; $("qCount").value = "0"; startQuiz(pool); });
+  document.addEventListener("keydown", (e) => {
+    if (activeTab !== "quiz" || $("qPlay").hidden || /INPUT|SELECT/.test(document.activeElement?.tagName || "")) return;
+    const n = Number(e.key);
+    if (n >= 1 && n <= 4) { const b = $("qChoices").children[n - 1]; if (b && !b.disabled) b.click(); }
+  });
+
+  /* =========================================================
+   * 시작
+   * ========================================================= */
+  /* ---------- 상태 문구 ---------- */
+  const hhmm = (t) => t ? new Date(t).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }) : "";
+  function refreshNote() {
+    const m = Store.mode;
+    if (m === "loading") setNote("단어장을 불러오는 중…", false);
+    else if (Store.busy) setNote("GitHub에 저장하는 중…", false);
+    else if (m === "gh") setNote(`GitHub에 저장돼요 · ${hhmm(Store.lastSync)} 동기화`, false);
+    else if (m === "readonly") setNote("읽기 전용 · 추가·삭제하려면 ⚙에서 토큰을 넣어 주세요", true);
+    else setNote(`오프라인 · ${Store.lastSync ? hhmm(Store.lastSync) + "에 받은 단어를 보여 줘요" : "저장된 단어가 없어요"} · ${Store.error}`, true);
+  }
+
+  Store.listeners.push(() => {
+    renderList();
+    if (activeTab === "card") buildDeck(false);
+    if (activeTab === "quiz" && !$("qSetup").hidden) fillTagSelect($("qTag"));
+    refreshNote();
+  });
+
+  /* ---------- 다시 불러오기 ---------- */
+  async function manualReload() {
+    const b = $("btnReload");
+    if (b.disabled) return;
+    b.disabled = true; b.classList.add("spin");
+    try { await Store.reload(); } finally { b.disabled = false; b.classList.remove("spin"); }
+  }
+  $("btnReload").addEventListener("click", manualReload);
+  // 홈 화면 앱으로 다시 돌아왔을 때 다른 기기의 변경을 받아 옴 (30초 간격 제한)
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && Store.mode !== "loading" && Date.now() - Store.lastSync > 30000) manualReload();
+  });
+
+  /* ---------- 동기화 설정 ---------- */
+  function openSettings(open) {
+    $("syncBox").hidden = !open;
+    $("btnSettings").setAttribute("aria-expanded", String(open));
+    if (open) {
+      $("sRepo").value = Store.cfg.repo; $("sBranch").value = Store.cfg.branch;
+      $("sToken").value = ""; $("sToken").placeholder = Store.cfg.token ? "저장된 토큰 있음 · 바꿀 때만 입력" : "github_pat_…";
+      $("syncMsg").hidden = true;
+    }
+  }
+  $("btnSettings").addEventListener("click", () => openSettings($("syncBox").hidden));
+  $("syncClose").addEventListener("click", () => openSettings(false));
+  $("syncForm").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const repo = $("sRepo").value.trim(), branch = $("sBranch").value.trim() || "main";
+    const token = $("sToken").value.trim() || Store.cfg.token;
+    const repoClean = repo.replace(/^https?:\/\/github\.com\//i, "").replace(/\.git$/i, "").replace(/\/+$/, "");
+    if (token && !/^[\w.-]+\/[\w.-]+$/.test(repoClean)) { showMsg($("syncMsg"), "저장소는 ‘아이디/저장소이름’ 형식으로 입력하세요. 예: myname/vocab", "err"); return; }
+    if (token && !/^(github_pat_|ghp_)[A-Za-z0-9_]+$/.test(token)) { showMsg($("syncMsg"), "토큰 형식이 아니에요. github_pat_ 로 시작하는 값을 그대로 붙여 넣어 주세요.", "err"); return; }
+    $("sSave").disabled = true;
+    try {
+      Store.saveConfig({ repo: repoClean, branch, token });
+      await Store.reload();
+      if (Store.mode === "gh") { showMsg($("syncMsg"), `연결됐어요. 단어 ${Store.words().length.toLocaleString()}개를 불러왔어요.`, "ok"); setTimeout(() => openSettings(false), 1200); }
+      else if (Store.mode === "readonly") showMsg($("syncMsg"), "토큰 없이 읽기 전용으로 연결했어요.", "ok");
+      else showMsg($("syncMsg"), Store.error, "err");
+    } catch (e) { showMsg($("syncMsg"), e.message, "err"); }
+    finally { $("sSave").disabled = false; }
+  });
+  $("sForget").addEventListener("click", async () => {
+    Store.saveConfig({ ...Store.cfg, token: "" });
+    $("sToken").placeholder = "github_pat_…";
+    showMsg($("syncMsg"), "이 기기에서 토큰을 지웠어요. 이제 읽기 전용이에요.", "ok");
+    await Store.reload();
+  });
+
+  renderList();
+  Store.init().then(() => {
+    // 처음 쓰는 기기이고 GitHub Pages 주소도 아니면 설정 창을 바로 열어 줌
+    if (!Store.cfg.token && Store.mode !== "gh" && !Store.cfg.repo) openSettings(true);
+  });
+})();
+</script>
+
+</body></html>
