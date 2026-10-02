@@ -4,8 +4,9 @@ GitHub Pages(https://itsminju.github.io/VOCA/)로 서비스되는 개인 영어 
 빌드 과정 없음: `main` 브랜치 루트의 파일이 그대로 배포된다 (반영까지 1~2분).
 
 ## 구조
-- `index.html` — 앱 전체 (HTML/CSS/JS 한 파일). 단어장 · 카드 · 퀴즈 탭, 엑셀 가져오기/내보내기
-- `data/words.json` — 단어 데이터. 앱이 GitHub Contents API로 직접 커밋한다
+- `index.html` — 앱 전체 (HTML/CSS/JS 한 파일). 단어장 · 카드 · 퀴즈 탭, 단어 삭제
+  - **앱에는 단어 추가 기능이 없다** (엑셀 가져오기·직접 입력·내보내기 모두 제거). 추가는 Claude가 스크립트로만 한다 — 다시 넣지 않는다
+- `data/words.json` — 단어 데이터. 앱은 삭제할 때만 GitHub Contents API로 직접 커밋한다
 - `scripts/add_words.py` — 단어 추가/수정 스크립트 (앱과 같은 형식으로 저장)
 - `manifest.webmanifest`, `icon-*.png` — 홈 화면 아이콘
 
@@ -40,7 +41,7 @@ GitHub Pages(https://itsminju.github.io/VOCA/)로 서비스되는 개인 영어 
 - 같은 단어(대소문자·공백 무시)는 하나만 둔다
 
 ## 화면(index.html) 수정 시
-- 한 파일 구조 유지. 외부 스크립트는 cdnjs만 사용 (현재 SheetJS)
+- 한 파일 구조 유지. 외부 스크립트는 cdnjs만 사용 (현재 없음)
 - 저장 로직(`Store`)의 데이터 형식·`serialize()`를 바꾸면 `scripts/add_words.py`도 같이 바꾼다
 - 토큰은 기기의 localStorage에만 저장 — 저장소에 토큰을 넣는 코드를 절대 만들지 않는다
 - 휴대폰 폭(390px)과 다크 모드에서 확인

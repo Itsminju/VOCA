@@ -88,11 +88,6 @@ nav.tabs button[aria-selected="true"] { background: var(--accent); color: var(--
 .hint { font-size: .82rem; color: var(--muted); margin: 0; }
 .label { font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
 
-.drop { border: 1.5px dashed var(--line); border-radius: var(--r); padding: 18px 14px; text-align: center; display: flex; flex-direction: column; gap: 6px; align-items: center; transition: border-color .15s, background .15s; }
-.drop.over { border-color: var(--accent); background: var(--accent-soft); }
-.drop strong { font-size: .95rem; }
-.cols { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
-.cols span { font-family: var(--f-mono); font-size: .75rem; border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; color: var(--muted); }
 
 .btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 14px; font-weight: 600; font-size: .9rem; }
 .btn:hover { border-color: var(--accent); }
@@ -106,18 +101,7 @@ nav.tabs button[aria-selected="true"] { background: var(--accent); color: var(--
 .grow { flex: 1 1 180px; min-width: 0; }
 input[type="text"], input[type="search"], select { border: 1px solid var(--line); background: var(--bg); border-radius: 8px; padding: 8px 10px; width: 100%; min-width: 0; }
 .field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.radio { display: inline-flex; gap: 6px; align-items: center; font-size: .88rem; }
 
-.summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.summary div { background: var(--bg); border-radius: 8px; padding: 8px 10px; }
-.summary b { display: block; font-family: var(--f-mono); font-size: 1.2rem; font-variant-numeric: tabular-nums; }
-.summary span { font-size: .78rem; color: var(--muted); }
-.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
-table { border-collapse: collapse; width: 100%; font-size: .84rem; }
-th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
-th { color: var(--muted); font-weight: 600; font-size: .75rem; }
-tr:last-child td { border-bottom: 0; }
-.tag-dup { color: var(--muted); font-size: .72rem; }
 .progress { height: 6px; background: var(--bg); border-radius: 99px; overflow: hidden; }
 .progress i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .2s; }
 .msg { font-size: .86rem; padding: 8px 12px; border-radius: 8px; margin: 0; }
@@ -179,8 +163,8 @@ mark { background: var(--marker); color: var(--marker-ink); padding: 0 2px; bord
 .score small { font-size: 1.2rem; color: var(--muted); }
 
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-@media (prefers-reduced-motion: reduce) { .fcard, .progress i, .drop { transition: none; } }
-@media (max-width: 480px) { .summary b { font-size: 1.05rem; } h1 { font-size: 1.6rem; } }
+@media (prefers-reduced-motion: reduce) { .fcard, .progress i { transition: none; } }
+@media (max-width: 480px) { h1 { font-size: 1.6rem; } }
 </style>
 </head>
 <body>
@@ -212,7 +196,7 @@ mark { background: var(--marker); color: var(--marker-ink); padding: 0 2px; bord
         <div class="field" style="flex:0 1 120px"><label class="label" for="sBranch">브랜치</label><input type="text" id="sBranch" placeholder="main" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
       </div>
       <div class="field"><label class="label" for="sToken">토큰 (Fine-grained token)</label><input type="password" id="sToken" placeholder="github_pat_…" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
-      <p class="hint">토큰 없이 저장하면 <b>읽기 전용</b>으로 열려요. 단어 보기·카드·퀴즈는 되지만 추가·삭제는 안 돼요.</p>
+      <p class="hint">토큰 없이 저장하면 <b>읽기 전용</b>으로 열려요. 단어 보기·카드·퀴즈는 되지만 삭제는 안 돼요.</p>
       <p class="msg" id="syncMsg" hidden></p>
       <div class="row end">
         <button class="btn danger" id="sForget" type="button">이 기기에서 토큰 지우기</button>
@@ -230,74 +214,6 @@ mark { background: var(--marker); color: var(--marker-ink); padding: 0 2px; bord
   <!-- ============ 단어장 ============ -->
   <section class="panel" id="panel-list">
     <div class="box">
-      <div class="row" style="justify-content:space-between">
-        <h2>엑셀로 단어 추가</h2>
-        <div class="row">
-          <button class="btn small" id="btnExport" type="button">엑셀로 내보내기</button>
-          <button class="btn small" id="btnTemplate" type="button">양식 받기 (.xlsx)</button>
-        </div>
-      </div>
-      <label class="drop" id="drop" for="fileInput">
-        <strong>엑셀 파일을 끌어다 놓거나 눌러서 선택</strong>
-        <span class="hint">.xlsx · .xls · .csv — 첫 번째 줄이 제목이면 자동으로 인식해요</span>
-        <span class="cols"><span>A 단어</span><span>B 뜻</span><span>C 예문</span><span>D 태그</span></span>
-        <input type="file" id="fileInput" class="sr" accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv">
-      </label>
-      <p class="hint">태그는 쉼표로 여러 개 넣을 수 있어요 (예: <code>토익, Day3</code>). 예문과 태그는 비워도 됩니다.</p>
-      <p class="msg" id="tplMsg" hidden></p>
-
-      <div id="importPreview" hidden>
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <div class="row" style="justify-content:space-between">
-            <span class="label" id="pvFile"></span>
-            <select id="pvSheet" style="width:auto" hidden aria-label="시트 선택"></select>
-          </div>
-          <div class="summary">
-            <div><b id="pvNew">0</b><span>새 단어</span></div>
-            <div><b id="pvDup">0</b><span>이미 있는 단어</span></div>
-            <div><b id="pvBad">0</b><span>제외 (뜻 없음)</span></div>
-          </div>
-          <div class="tablewrap"><table>
-            <thead><tr><th>단어</th><th>뜻</th><th>예문</th><th>태그</th></tr></thead>
-            <tbody id="pvRows"></tbody>
-          </table></div>
-          <p class="hint" id="pvMore"></p>
-          <div class="field">
-            <label class="label" for="pvTag">모든 단어에 붙일 태그 (선택)</label>
-            <input type="text" id="pvTag" placeholder="예: Day3">
-          </div>
-          <div class="row" id="pvDupPolicy">
-            <span class="label">이미 있는 단어는</span>
-            <label class="radio"><input type="radio" name="dup" value="skip" id="dupSkip" checked> 건너뛰기</label>
-            <label class="radio"><input type="radio" name="dup" value="overwrite" id="dupOver"> 새 내용으로 바꾸기</label>
-          </div>
-          <div class="progress" id="pvProg" hidden><i></i></div>
-          <div class="row end">
-            <button class="btn" id="pvCancel" type="button">취소</button>
-            <button class="btn primary" id="pvApply" type="button">단어장에 추가</button>
-          </div>
-        </div>
-      </div>
-      <p class="msg" id="importMsg" hidden></p>
-    </div>
-
-    <details class="box" id="manualBox">
-      <summary style="cursor:pointer;font-weight:600">한 단어씩 직접 추가</summary>
-      <form id="manualForm" style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
-        <div class="row">
-          <div class="field grow"><label class="label" for="mWord">단어</label><input type="text" id="mWord" required autocomplete="off"></div>
-          <div class="field grow"><label class="label" for="mMean">뜻</label><input type="text" id="mMean" required autocomplete="off"></div>
-        </div>
-        <div class="field"><label class="label" for="mEx">예문</label><input type="text" id="mEx" autocomplete="off"></div>
-        <div class="row">
-          <div class="field grow"><label class="label" for="mTag">태그</label><input type="text" id="mTag" placeholder="쉼표로 구분" autocomplete="off"></div>
-          <button class="btn primary" type="submit" style="align-self:flex-end">추가</button>
-        </div>
-        <p class="msg" id="manualMsg" hidden></p>
-      </form>
-    </details>
-
-    <div class="box">
       <div class="row">
         <input type="search" id="search" class="grow" placeholder="단어나 뜻으로 찾기" aria-label="검색">
       </div>
@@ -310,10 +226,10 @@ mark { background: var(--marker); color: var(--marker-ink); padding: 0 2px; bord
           <button class="btn small" id="bulkNo" type="button">취소</button>
         </span>
       </div>
+      <p class="msg" id="listMsg" hidden></p>
       <ul class="words" id="wordList"></ul>
       <div class="empty" id="listEmpty" hidden>
-        <p><strong style="color:var(--ink)">아직 단어가 없어요.</strong><br>위에서 엑셀 파일을 올리면 여기에 쌓여요. 먼저 둘러보려면 예시 단어를 넣어 보세요.</p>
-        <button class="btn" id="btnSample" type="button">예시 단어 8개 넣기</button>
+        <p><strong style="color:var(--ink)">아직 단어가 없어요.</strong><br>Claude에게 단어 추가를 부탁하면 여기에 쌓여요. 추가된 뒤 ↻를 누르세요.</p>
       </div>
       <p class="hint" id="noMatch" hidden style="text-align:center">찾는 단어가 없어요.</p>
       <div class="row" style="justify-content:center"><button class="btn small" id="moreBtn" type="button" hidden>더 보기</button></div>
@@ -342,7 +258,7 @@ mark { background: var(--marker); color: var(--marker-ink); padding: 0 2px; bord
         <button class="btn primary" id="cNext" type="button">다음 →</button>
       </div>
     </div>
-    <div class="empty box" id="cardEmpty" hidden><p>이 범위에 단어가 없어요. 단어장 탭에서 먼저 단어를 추가하세요.</p></div>
+    <div class="empty box" id="cardEmpty" hidden><p>이 범위에 단어가 없어요. Claude에게 단어 추가를 부탁하세요.</p></div>
   </section>
 
   <!-- ============ 퀴즈 ============ -->
@@ -387,7 +303,6 @@ mark { background: var(--marker); color: var(--marker-ink); padding: 0 2px; bord
   </section>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 (() => {
   "use strict";
@@ -398,21 +313,10 @@ mark { background: var(--marker); color: var(--marker-ink); padding: 0 2px; bord
   const $ = (id) => document.getElementById(id);
   const norm = (s) => String(s ?? "").normalize("NFC").trim().replace(/\s+/g, " ");
   const keyOf = (w) => norm(w).toLowerCase();
-  const rid = (p) => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   const shuffle = (a) => { const r = a.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; };
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-  const MAX_FIELD = 500;           // 셀 하나당 최대 글자 수 (과도하게 긴 셀 방지)
-  const MAX_ROWS = 5000;           // 한 번에 가져올 최대 행 수
+  const MAX_FIELD = 500;           // 칸 하나당 최대 글자 수 (scripts/add_words.py와 동일)
 
-  /** 태그 문자열 → 배열 ("토익, Day3 / #명사" → ["토익","Day3","명사"]) */
-  function parseTags(s) {
-    const out = [];
-    String(s ?? "").split(/[,;/|]+/).forEach((t) => {
-      const v = norm(t).replace(/^#/, "").slice(0, 40);
-      if (v && !out.includes(v)) out.push(v);
-    });
-    return out;
-  }
   function el(tag, props = {}, ...kids) {
     const n = document.createElement(tag);
     for (const [k, v] of Object.entries(props)) {
@@ -631,7 +535,7 @@ mark { background: var(--marker); color: var(--marker-ink); padding: 0 2px; bord
       if (!this.canWrite()) {
         throw new Error(this.mode === "offline"
           ? "지금은 GitHub에 연결되지 않아 저장할 수 없어요. ↻를 눌러 다시 연결해 보세요."
-          : "읽기 전용이에요. ⚙ 설정에서 토큰을 넣으면 단어를 추가·삭제할 수 있어요.");
+          : "읽기 전용이에요. ⚙ 설정에서 토큰을 넣으면 단어를 삭제할 수 있어요.");
       }
       this.busy++;
       const before = { doc: this.doc, sha: this.sha };
@@ -670,25 +574,6 @@ mark { background: var(--marker); color: var(--marker-ink); padding: 0 2px; bord
         this.busy--;
         this.emit();
       }
-    },
-
-    /** entries: [{id?, w, m, e, t, c?}] — id가 있으면 수정, 없으면 새로 추가 */
-    async upsert(entries, onProgress) {
-      const now = Date.now();
-      // id는 미리 정해 둠 → 충돌로 다시 적용해도 같은 단어가 두 번 생기지 않음
-      const fixed = entries.map((en, i) => ({ id: en.id || rid("w"), isNew: !en.id, rec: { w: en.w, m: en.m, e: en.e || "", t: en.t || [], c: en.c || now + i } }));
-      const mutator = (doc) => {
-        const byKey = new Map(Object.entries(doc.words).map(([id, e]) => [keyOf(e.w), id]));
-        for (const f of fixed) {
-          // 새 단어인데 다른 기기에서 같은 단어를 먼저 넣었다면 그 항목을 갱신
-          const other = f.isNew ? byKey.get(keyOf(f.rec.w)) : null;
-          if (other && other !== f.id) doc.words[other] = { ...f.rec, c: doc.words[other].c || f.rec.c };
-          else { doc.words[f.id] = f.rec; byKey.set(keyOf(f.rec.w), f.id); }
-        }
-      };
-      const added = fixed.filter((f) => f.isNew).length, changed = fixed.length - added;
-      const msg = fixed.length === 1 ? `${added ? "단어 추가" : "단어 수정"}: ${fixed[0].rec.w}` : `단어 ${added}개 추가${changed ? `, ${changed}개 수정` : ""}`;
-      await this.commit(mutator, msg, onProgress);
     },
 
     async remove(ids) {
@@ -771,7 +656,7 @@ mark { background: var(--marker); color: var(--marker-ink); padding: 0 2px; bord
   function wordRow(w) {
     const act = el("div", { class: "w-act" });
     if (pendingDelete === w.id) {
-      act.append(el("button", { class: "btn small danger solid", type: "button", text: "삭제", onclick: async () => { pendingDelete = null; try { await Store.remove([w.id]); } catch (e) { showMsg($("importMsg"), e.message, "err"); } } }),
+      act.append(el("button", { class: "btn small danger solid", type: "button", text: "삭제", onclick: async () => { pendingDelete = null; try { await Store.remove([w.id]); } catch (e) { showMsg($("listMsg"), e.message, "err"); } } }),
         el("button", { class: "btn small", type: "button", text: "취소", onclick: () => { pendingDelete = null; renderList(); } }));
     } else {
       act.append(el("button", { class: "btn small", type: "button", "aria-label": `${w.w} 삭제`, text: "삭제", onclick: () => { pendingDelete = w.id; renderList(); } }));
@@ -790,195 +675,8 @@ mark { background: var(--marker); color: var(--marker-ink); padding: 0 2px; bord
     $("bulkDel").hidden = false; $("bulkConfirm").hidden = true;
     const ids = byTag(Store.words(), listTag).map((w) => w.id);
     const tag = listTag; listTag = "";
-    try { await Store.remove(ids); showMsg($("importMsg"), `‘${tag}’ 태그 단어 ${ids.length}개를 삭제했어요.`, "ok"); }
-    catch (e) { showMsg($("importMsg"), e.message, "err"); }
-  });
-
-  /* =========================================================
-   * 직접 추가 / 예시 단어
-   * ========================================================= */
-  $("manualForm").addEventListener("submit", async (ev) => {
-    ev.preventDefault();
-    const w = norm($("mWord").value).slice(0, MAX_FIELD), m = norm($("mMean").value).slice(0, MAX_FIELD);
-    if (!w || !m) { showMsg($("manualMsg"), "단어와 뜻을 모두 입력하세요.", "err"); return; }
-    const exists = Store.words().find((x) => keyOf(x.w) === keyOf(w));
-    const entry = { w, m, e: norm($("mEx").value).slice(0, MAX_FIELD), t: parseTags($("mTag").value) };
-    if (exists) { entry.id = exists.id; entry.c = exists.c; }
-    try {
-      await Store.upsert([entry]);
-      showMsg($("manualMsg"), exists ? `‘${w}’의 내용을 새로 바꿨어요.` : `‘${w}’를 추가했어요.`, "ok");
-      ["mWord", "mMean", "mEx"].forEach((id) => ($(id).value = "")); $("mWord").focus();
-    } catch (e) { showMsg($("manualMsg"), e.message, "err"); }
-  });
-  const SAMPLES = [
-    ["resilient", "회복력 있는", "She stayed resilient after the setback."],
-    ["meticulous", "꼼꼼한", "He keeps meticulous notes in every meeting."],
-    ["leverage", "(자원 등을) 활용하다", "We can leverage our existing data to improve targeting."],
-    ["concise", "간결한", "Keep your answer concise and clear."],
-    ["retain", "유지하다, 보유하다", "The campaign helped us retain loyal customers."],
-    ["ambiguous", "모호한", "The instructions were ambiguous, so I asked again."],
-    ["postpone", "연기하다", "They decided to postpone the launch until May."],
-    ["insight", "통찰, 인사이트", "The report gave us a useful insight into user behavior."],
-  ];
-  $("btnSample").addEventListener("click", async () => {
-    $("btnSample").disabled = true;
-    try { await Store.upsert(SAMPLES.map(([w, m, e]) => ({ w, m, e, t: ["예시"] }))); showMsg($("importMsg"), "예시 단어 8개를 넣었어요. ‘예시’ 태그로 한 번에 지울 수 있어요.", "ok"); }
-    catch (e) { showMsg($("importMsg"), e.message, "err"); }
-    $("btnSample").disabled = false;
-  });
-
-  /* =========================================================
-   * 엑셀 가져오기
-   * ========================================================= */
-  const HEADER = {
-    w: ["단어", "영어", "영단어", "word", "words", "english", "term", "vocabulary", "voca"],
-    m: ["뜻", "의미", "한국어", "해석", "meaning", "meanings", "korean", "definition", "뜻풀이"],
-    e: ["예문", "example", "examples", "sentence", "예시", "문장"],
-    t: ["태그", "tag", "tags", "분류", "category", "그룹", "group", "day"],
-  };
-  let wb = null, parsed = null, fileBase = "";
-
-  const drop = $("drop");
-  ["dragenter", "dragover"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add("over"); }));
-  ["dragleave", "drop"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
-  drop.addEventListener("drop", (e) => { const f = e.dataTransfer?.files?.[0]; if (f) readFile(f); });
-  $("fileInput").addEventListener("change", (e) => { const f = e.target.files?.[0]; if (f) readFile(f); e.target.value = ""; });
-
-  async function readFile(file) {
-    $("importMsg").hidden = true;
-    if (typeof XLSX === "undefined") { showMsg($("importMsg"), "엑셀 읽기 도구를 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침하세요.", "err"); return; }
-    if (!/\.(xlsx|xls|csv)$/i.test(file.name)) { showMsg($("importMsg"), "지원하지 않는 파일이에요. .xlsx, .xls, .csv 파일을 올려 주세요.", "err"); return; }
-    if (file.size > 10 * 1024 * 1024) { showMsg($("importMsg"), "파일이 10MB보다 커요. 단어 부분만 남겨서 다시 올려 주세요.", "err"); return; }
-    try {
-      const buf = await file.arrayBuffer();
-      if (/\.csv$/i.test(file.name)) {
-        // 엑셀에서 저장한 CSV는 CP949(EUC-KR)인 경우가 많아 UTF-8 실패 시 EUC-KR로 다시 읽음
-        let text;
-        try { text = new TextDecoder("utf-8", { fatal: true }).decode(buf); }
-        catch { text = new TextDecoder("euc-kr").decode(buf); }
-        wb = XLSX.read(text.replace(/^﻿/, ""), { type: "string", raw: true });
-      } else {
-        wb = XLSX.read(buf, { type: "array" });
-      }
-    } catch {
-      showMsg($("importMsg"), "파일을 열지 못했어요. 비밀번호가 걸려 있거나 손상된 파일인지 확인하세요.", "err"); return;
-    }
-    fileBase = file.name.replace(/\.[^.]+$/, "");
-    const sel = $("pvSheet");
-    sel.replaceChildren(...wb.SheetNames.map((n) => el("option", { value: n, text: n })));
-    sel.hidden = wb.SheetNames.length < 2;
-    $("pvFile").textContent = file.name;
-    $("pvTag").value = /^(sheet|시트|book|통합 문서)\d*$/i.test(fileBase) ? "" : fileBase.slice(0, 40);
-    parseSheet(wb.SheetNames[0]);
-  }
-  $("pvSheet").addEventListener("change", (e) => parseSheet(e.target.value));
-
-  /** 시트 → 단어 행. 첫 줄이 제목이면 열 위치를 제목으로 찾고, 아니면 A~D 순서로 읽음 */
-  function parseSheet(name) {
-    const ws = wb.Sheets[name];
-    const rows = ws ? XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", raw: false, blankrows: false }) : [];
-    let map = { w: 0, m: 1, e: 2, t: 3 }, start = 0;
-    const head = (rows[0] || []).map((c) => keyOf(c));
-    const found = {};
-    for (const [k, names] of Object.entries(HEADER)) { const i = head.findIndex((h) => names.includes(h)); if (i >= 0) found[k] = i; }
-    if (found.w != null || found.m != null) {
-      start = 1;
-      map = { w: found.w ?? 0, m: found.m ?? (found.w === 1 ? 0 : 1), e: found.e ?? -1, t: found.t ?? -1 };
-    }
-    const existing = new Map(Store.words().map((w) => [keyOf(w.w), w]));
-    const inFile = new Map();
-    let bad = 0, truncated = false;
-    for (let r = start; r < rows.length; r++) {
-      if (inFile.size >= MAX_ROWS) { truncated = true; break; }
-      const row = rows[r];
-      const cell = (i) => (i >= 0 ? norm(row[i]).slice(0, MAX_FIELD) : "");
-      const w = cell(map.w), m = cell(map.m);
-      if (!w && !m) continue;               // 빈 줄
-      if (!w || !m) { bad++; continue; }    // 단어나 뜻이 빠진 줄
-      const k = keyOf(w);
-      // 같은 파일 안에 같은 단어가 또 있으면 아래 줄 내용으로 합침 (태그는 합집합)
-      const prev = inFile.get(k);
-      const t = parseTags(cell(map.t));
-      inFile.set(k, { w, m, e: cell(map.e) || prev?.e || "", t: prev ? [...new Set([...prev.t, ...t])] : t, dup: existing.get(k) || null });
-    }
-    parsed = { items: [...inFile.values()], bad, truncated };
-    renderPreview();
-  }
-  function renderPreview() {
-    const { items, bad, truncated } = parsed;
-    const dups = items.filter((i) => i.dup).length;
-    $("pvNew").textContent = (items.length - dups).toLocaleString();
-    $("pvDup").textContent = dups.toLocaleString();
-    $("pvBad").textContent = bad.toLocaleString();
-    $("pvDupPolicy").hidden = dups === 0;
-    $("pvRows").replaceChildren(...items.slice(0, 6).map((i) => el("tr", {},
-      el("td", {}, i.w, i.dup ? el("span", { class: "tag-dup", text: " · 이미 있음" }) : null),
-      el("td", { text: i.m }), el("td", { text: i.e }), el("td", { text: i.t.join(", ") }))));
-    $("pvMore").textContent = items.length > 6 ? `외 ${(items.length - 6).toLocaleString()}개` : (items.length === 0 ? "추가할 단어를 찾지 못했어요. A열에 단어, B열에 뜻이 있는지 확인하세요." : "");
-    if (truncated) $("pvMore").textContent += ` · 한 번에 ${MAX_ROWS.toLocaleString()}개까지만 가져와요. 나머지는 파일을 나눠 올려 주세요.`;
-    $("pvApply").disabled = items.length === 0;
-    $("importPreview").hidden = false;
-    $("pvProg").hidden = true;
-  }
-  $("pvCancel").addEventListener("click", () => { $("importPreview").hidden = true; parsed = null; });
-  $("pvApply").addEventListener("click", async () => {
-    if (!parsed) return;
-    const policy = $("dupOver").checked ? "overwrite" : "skip";
-    const extra = parseTags($("pvTag").value);
-    const entries = []; let skipped = 0, updated = 0;
-    for (const it of parsed.items) {
-      const t = [...new Set([...it.t, ...extra])];
-      if (it.dup) {
-        if (policy === "skip") { skipped++; continue; }
-        entries.push({ id: it.dup.id, c: it.dup.c, w: it.w, m: it.m, e: it.e || it.dup.e, t: [...new Set([...(it.dup.t || []), ...t])] });
-        updated++;
-      } else entries.push({ w: it.w, m: it.m, e: it.e, t });
-    }
-    if (!entries.length) { showMsg($("importMsg"), "새로 추가할 단어가 없어요. 모두 이미 있는 단어예요.", "ok"); $("importPreview").hidden = true; return; }
-    $("pvApply").disabled = true; $("pvCancel").disabled = true;
-    const prog = $("pvProg"); prog.hidden = false; prog.firstElementChild.style.width = "0";
-    try {
-      await Store.upsert(entries, (p) => { prog.firstElementChild.style.width = Math.round(p * 100) + "%"; });
-      const added = entries.length - updated;
-      const parts = [`${added.toLocaleString()}개 추가`];
-      if (updated) parts.push(`${updated}개 수정`);
-      if (skipped) parts.push(`${skipped}개 건너뜀`);
-      if (parsed.bad) parts.push(`${parsed.bad}줄 제외`);
-      showMsg($("importMsg"), `완료: ${parts.join(" · ")}`, "ok");
-      $("importPreview").hidden = true; parsed = null;
-    } catch (e) {
-      showMsg($("importMsg"), e.message, "err");
-    } finally { $("pvApply").disabled = false; $("pvCancel").disabled = false; }
-  });
-
-  /** 표(2차원 배열)를 .xlsx로 내려받기 */
-  function downloadXlsx(filename, aoa, cols) {
-    if (typeof XLSX === "undefined") throw new Error("엑셀 도구를 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침하세요.");
-    const sheet = XLSX.utils.aoa_to_sheet(aoa);
-    sheet["!cols"] = cols;
-    const book = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(book, sheet, "단어");
-    const data = XLSX.write(book, { bookType: "xlsx", type: "array" });
-    const url = URL.createObjectURL(new Blob([data], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
-    const a = el("a", { href: url, download: filename });
-    document.body.append(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 30000);
-  }
-  const XLSX_COLS = [{ wch: 16 }, { wch: 22 }, { wch: 50 }, { wch: 14 }];
-
-  $("btnTemplate").addEventListener("click", () => {
-    try {
-      downloadXlsx("단어장_양식.xlsx", [["단어", "뜻", "예문", "태그"], ...SAMPLES.slice(0, 3).map(([w, m, e]) => [w, m, e, "Day1"])], XLSX_COLS);
-      showMsg($("tplMsg"), "양식을 받았어요. 예시 3줄을 지우고 단어를 채워 올리세요.", "ok");
-    } catch (e) { showMsg($("tplMsg"), e.message, "err"); }
-  });
-  $("btnExport").addEventListener("click", () => {
-    const words = Store.words().reverse(); // 추가순
-    if (!words.length) { showMsg($("tplMsg"), "내보낼 단어가 없어요.", "err"); return; }
-    try {
-      const d = new Date(), ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
-      downloadXlsx(`단어장_${ymd}.xlsx`, [["단어", "뜻", "예문", "태그"], ...words.map((w) => [w.w, w.m, w.e || "", (w.t || []).join(", ")])], XLSX_COLS);
-      showMsg($("tplMsg"), `단어 ${words.length.toLocaleString()}개를 내보냈어요.`, "ok");
-    } catch (e) { showMsg($("tplMsg"), e.message, "err"); }
+    try { await Store.remove(ids); showMsg($("listMsg"), `‘${tag}’ 태그 단어 ${ids.length}개를 삭제했어요.`, "ok"); }
+    catch (e) { showMsg($("listMsg"), e.message, "err"); }
   });
 
   /* =========================================================
@@ -1131,7 +829,7 @@ mark { background: var(--marker); color: var(--marker-ink); padding: 0 2px; bord
     if (m === "loading") setNote("단어장을 불러오는 중…", false);
     else if (Store.busy) setNote("GitHub에 저장하는 중…", false);
     else if (m === "gh") setNote(`GitHub에 저장돼요 · ${hhmm(Store.lastSync)} 동기화`, false);
-    else if (m === "readonly") setNote("읽기 전용 · 추가·삭제하려면 ⚙에서 토큰을 넣어 주세요", true);
+    else if (m === "readonly") setNote("읽기 전용 · 삭제하려면 ⚙에서 토큰을 넣어 주세요", true);
     else setNote(`오프라인 · ${Store.lastSync ? hhmm(Store.lastSync) + "에 받은 단어를 보여 줘요" : "저장된 단어가 없어요"} · ${Store.error}`, true);
   }
 
