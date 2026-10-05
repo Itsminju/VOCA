@@ -162,6 +162,21 @@ mark { background: var(--marker); color: var(--marker-ink); padding: 0 2px; bord
 .score { font-family: var(--f-word); font-size: 3rem; font-weight: 600; text-align: center; line-height: 1; font-variant-numeric: tabular-nums; }
 .score small { font-size: 1.2rem; color: var(--muted); }
 
+/* 발음 듣기 */
+.icon-btn.speak { display: inline-grid; place-items: center; flex: none; }
+.speak svg { width: 16px; height: 16px; display: block; }
+.icon-btn.speak.playing { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.speak-inline { border: 0; background: transparent; color: var(--muted); padding: 2px 4px; margin-right: 2px; vertical-align: -3px; border-radius: 6px; display: inline-grid; place-items: center; }
+.speak-inline:hover, .speak-inline.playing { color: var(--accent); }
+.speak-inline svg { width: 14px; height: 14px; }
+.q-prompt-row { display: flex; align-items: center; justify-content: center; gap: 10px; min-width: 0; }
+.tts-row { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+.check { display: inline-flex; gap: 6px; align-items: center; font-size: .88rem; cursor: pointer; }
+.card-tools { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 10px; }
+.card-tools .btn { display: inline-flex; gap: 6px; align-items: center; }
+.card-tools .btn.playing { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+body.no-tts .tts { display: none !important; }
+
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 @media (prefers-reduced-motion: reduce) { .fcard, .progress i { transition: none; } }
 @media (max-width: 480px) { h1 { font-size: 1.6rem; } }
@@ -245,6 +260,13 @@ mark { background: var(--marker); color: var(--marker-ink); padding: 0 2px; bord
       <div class="field"><span class="label">순서</span>
         <div class="seg" id="cOrder"><button type="button" data-v="seq" aria-pressed="true">추가순</button><button type="button" data-v="rnd" aria-pressed="false">섞기</button></div></div>
     </div>
+    <div class="tts-row tts">
+      <label class="check"><input type="checkbox" id="ttsAutoC"> 카드 넘기면 단어 읽기</label>
+      <div class="seg" id="ttsAccent" aria-label="발음"><button type="button" data-v="en-US" aria-pressed="true">미국</button><button type="button" data-v="en-GB" aria-pressed="false">영국</button></div>
+      <select id="ttsRate" style="width:auto" aria-label="읽는 속도">
+        <option value="0.7">느리게</option><option value="0.9" selected>보통</option><option value="1.1">빠르게</option>
+      </select>
+    </div>
     <div id="cardArea">
       <div class="card-stage">
         <button class="fcard" id="fcard" type="button" aria-label="카드 뒤집기">
@@ -256,6 +278,10 @@ mark { background: var(--marker); color: var(--marker-ink); padding: 0 2px; bord
         <button class="btn" id="cPrev" type="button">← 이전</button>
         <span class="count" id="cCount">0 / 0</span>
         <button class="btn primary" id="cNext" type="button">다음 →</button>
+      </div>
+      <div class="card-tools tts">
+        <button class="btn small" id="cSayWord" type="button">단어 듣기</button>
+        <button class="btn small" id="cSayEx" type="button">예문 듣기</button>
       </div>
     </div>
     <div class="empty box" id="cardEmpty" hidden><p>이 범위에 단어가 없어요. Claude에게 단어 추가를 부탁하세요.</p></div>
@@ -272,6 +298,7 @@ mark { background: var(--marker); color: var(--marker-ink); padding: 0 2px; bord
         <div class="field"><label class="label" for="qCount">문항 수</label>
           <select id="qCount" style="width:auto"><option value="10">10문제</option><option value="20">20문제</option><option value="0">전체</option></select></div>
       </div>
+      <label class="check tts"><input type="checkbox" id="ttsAutoQ"> 영어 단어 자동으로 읽기 (단어 → 뜻은 문제, 뜻 → 단어는 정답)</label>
       <p class="msg err" id="qErr" hidden></p>
       <div class="row end"><button class="btn primary" id="qStart" type="button">퀴즈 시작</button></div>
     </div>
@@ -279,7 +306,7 @@ mark { background: var(--marker); color: var(--marker-ink); padding: 0 2px; bord
     <div class="box" id="qPlay" hidden>
       <div class="q-meta"><span id="qPos">1 / 10</span><span id="qScoreNow">정답 0</span></div>
       <div class="progress"><i id="qBar"></i></div>
-      <div class="q-prompt" id="qPrompt"></div>
+      <div class="q-prompt-row"><div class="q-prompt" id="qPrompt"></div><span id="qSay"></span></div>
       <div class="choices" id="qChoices"></div>
       <p class="hint" id="qExample" style="text-align:center" hidden></p>
       <div class="row" style="justify-content:space-between">
@@ -589,9 +616,97 @@ mark { background: var(--marker); color: var(--marker-ink); padding: 0 2px; bord
   /* =========================================================
    * 탭
    * ========================================================= */
+  /* =========================================================
+   * 발음 듣기 (브라우저 내장 음성 · Web Speech API)
+   * - 외부 서비스·비용 없음. 기기에 깔린 영어 음성을 사용
+   * - 설정(억양·속도·자동 읽기)은 이 기기의 localStorage에만 저장
+   * ========================================================= */
+  const Speech = (() => {
+    const synth = window.speechSynthesis;
+    const supported = !!synth && typeof window.SpeechSynthesisUtterance === "function";
+    const PREF_KEY = "voca.tts";
+    const prefs = { accent: "en-US", rate: 0.9, autoCard: false, autoQuiz: false };
+    try { Object.assign(prefs, JSON.parse(localStorage.getItem(PREF_KEY) || "{}")); } catch { /* 저장소 차단: 기본값 사용 */ }
+    if (!["en-US", "en-GB"].includes(prefs.accent)) prefs.accent = "en-US";
+    prefs.rate = Math.min(1.5, Math.max(0.5, Number(prefs.rate) || 0.9));
+
+    let voices = [];
+    const loadVoices = () => { try { voices = synth.getVoices() || []; } catch { voices = []; } };
+    if (supported) { loadVoices(); synth.addEventListener?.("voiceschanged", loadVoices); }
+
+    /** 고른 억양에 맞는 음성. 품질 좋은 음성(Enhanced/Premium/Natural/Google)을 우선 */
+    function pickVoice() {
+      const lang = (v) => String(v.lang || "").replace("_", "-").toLowerCase();
+      const want = prefs.accent.toLowerCase();
+      const score = (v) => (/(enhanced|premium|natural|neural)/i.test(v.name) ? 3 : 0) + (/google/i.test(v.name) ? 2 : 0) + (v.localService ? 1 : 0);
+      const exact = voices.filter((v) => lang(v) === want).sort((a, b) => score(b) - score(a));
+      if (exact.length) return exact[0];
+      return voices.filter((v) => lang(v).startsWith("en")).sort((a, b) => score(b) - score(a))[0] || null;
+    }
+
+    /** 읽기 전에 정리: 표현 틀의 ~, 괄호 메모, 한글, '/' '+' 기호 제거 */
+    function clean(text) {
+      return String(text ?? "")
+        .replace(/\([^)]*\)|（[^）]*）|\[[^\]]*\]/g, " ")
+        .replace(/[ᄀ-ᇿ㄰-㆏가-힯]+/g, " ")
+        .replace(/\s+\/\s+/g, ". ").replace(/[~+]/g, " ").replace(/…/g, "...")
+        .replace(/\s+/g, " ").replace(/\s+([,.!?;:])/g, "$1").replace(/([,;:])(?=[,.!?;:])/g, "")
+        .replace(/^[\s,.;:—–-]+|[\s,;:—–-]+$/g, "").trim();
+    }
+
+    let current = null; // 지금 읽는 중인 버튼 (재생 표시용)
+    const mark = (btn, on) => { if (btn) { btn.classList.toggle("playing", on); btn.setAttribute("aria-pressed", String(on)); } };
+
+    function stop() { if (!supported) return; try { synth.cancel(); } catch { /* 무시 */ } mark(current, false); current = null; }
+
+    /** text를 읽음. 같은 버튼을 읽는 중에 다시 누르면 멈춤 */
+    function speak(text, btn) {
+      if (!supported) return;
+      const t = clean(text);
+      if (!t) return;
+      if (btn && current === btn) { stop(); return; }
+      stop();
+      const u = new SpeechSynthesisUtterance(t.slice(0, 600));
+      u.lang = prefs.accent;
+      const v = pickVoice(); if (v) u.voice = v;
+      u.rate = prefs.rate;
+      current = btn || null; mark(current, true);
+      const done = () => { if (current === btn) { mark(current, false); current = null; } };
+      u.onend = done; u.onerror = done;
+      try { if (synth.paused) synth.resume(); synth.speak(u); } catch { done(); }
+    }
+
+    function save(patch) {
+      Object.assign(prefs, patch);
+      try { localStorage.setItem(PREF_KEY, JSON.stringify(prefs)); } catch { /* 이 기기에 저장 불가: 이번 방문에만 적용 */ }
+    }
+    return { supported, prefs, speak, stop, save, clean };
+  })();
+  if (!Speech.supported) document.body.classList.add("no-tts");
+
+  const SPEAKER_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor" stroke="none"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
+  /** 발음 버튼. inline=true면 예문 앞에 붙는 작은 버튼 */
+  function speakBtn(getText, label, inline) {
+    const b = el("button", { class: (inline ? "speak-inline" : "icon-btn speak") + " tts", type: "button", "aria-label": label, title: label, "aria-pressed": "false" });
+    b.innerHTML = SPEAKER_SVG; // 고정된 아이콘 문자열만 넣음 (사용자 데이터 아님)
+    b.addEventListener("click", (ev) => { ev.stopPropagation(); Speech.speak(typeof getText === "function" ? getText() : getText, b); });
+    return b;
+  }
+
+  // 발음 설정 컨트롤 (카드 탭) · 자동 읽기 (카드/퀴즈)
+  segControl($("ttsAccent"), (v) => { Speech.save({ accent: v }); Speech.speak("Hello", null); });
+  $("ttsAccent").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === Speech.prefs.accent)));
+  $("ttsRate").value = [...$("ttsRate").options].some((o) => Number(o.value) === Speech.prefs.rate) ? String(Speech.prefs.rate) : "0.9";
+  $("ttsRate").addEventListener("change", (e) => { Speech.save({ rate: Number(e.target.value) }); Speech.speak("Hello", null); });
+  $("ttsAutoC").checked = !!Speech.prefs.autoCard;
+  $("ttsAutoC").addEventListener("change", (e) => Speech.save({ autoCard: e.target.checked }));
+  $("ttsAutoQ").checked = !!Speech.prefs.autoQuiz;
+  $("ttsAutoQ").addEventListener("change", (e) => Speech.save({ autoQuiz: e.target.checked }));
+
   let activeTab = "list";
   document.querySelectorAll("nav.tabs button").forEach((b) => b.addEventListener("click", () => {
     activeTab = b.dataset.tab;
+    Speech.stop();
     document.querySelectorAll("nav.tabs button").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
     ["list", "card", "quiz"].forEach((t) => { $("panel-" + t).hidden = t !== activeTab; });
     if (activeTab === "card") buildDeck(false);
@@ -661,10 +776,11 @@ mark { background: var(--marker); color: var(--marker-ink); padding: 0 2px; bord
     } else {
       act.append(el("button", { class: "btn small", type: "button", "aria-label": `${w.w} 삭제`, text: "삭제", onclick: () => { pendingDelete = w.id; renderList(); } }));
     }
+    act.prepend(speakBtn(w.w, `${w.w} 듣기`));
     return el("li", {},
       el("div", { class: "w-head" }, el("span", { class: "w-word", text: w.w }), el("span", { class: "w-mean", text: w.m })),
       act,
-      w.e ? el("p", { class: "w-ex" }, highlight(w.e, w.w)) : null,
+      w.e ? el("p", { class: "w-ex" }, speakBtn(w.e, "예문 듣기", true), highlight(w.e, w.w)) : null,
       (w.t && w.t.length) ? el("div", { class: "w-tags" }, w.t.map((t) => el("span", { text: t }))) : null);
   }
   $("search").addEventListener("input", () => { listLimit = 150; renderList(); });
@@ -718,9 +834,21 @@ mark { background: var(--marker); color: var(--marker-ink); padding: 0 2px; bord
     $("cCount").textContent = `${deckPos + 1} / ${deck.length}`;
     $("cPrev").disabled = deckPos === 0;
     $("cNext").textContent = deckPos === deck.length - 1 ? "처음으로" : "다음 →";
+    $("cSayEx").disabled = !w.e;
   }
-  const flip = () => { flipped = !flipped; $("fcard").classList.toggle("flipped", flipped); };
-  const go = (d) => { if (!deck.length) return; deckPos = (deckPos + d + deck.length) % deck.length; flipped = false; renderCard(); };
+  // 자동 읽기: 영어 단어가 보이는 순간에 읽음 (앞면이 단어면 넘길 때, 앞면이 뜻이면 뒤집을 때)
+  const autoSayCard = () => {
+    if (!Speech.prefs.autoCard || !deck.length) return;
+    const wordVisible = (cFront() === "w") !== flipped;
+    if (wordVisible) Speech.speak(deck[deckPos].w, $("cSayWord")); else Speech.stop();
+  };
+  const flip = () => { flipped = !flipped; $("fcard").classList.toggle("flipped", flipped); autoSayCard(); };
+  const go = (d) => { if (!deck.length) return; deckPos = (deckPos + d + deck.length) % deck.length; flipped = false; renderCard(); if (Speech.prefs.autoCard) autoSayCard(); else Speech.stop(); };
+  $("cSayWord").insertAdjacentHTML("afterbegin", SPEAKER_SVG);
+  $("cSayEx").insertAdjacentHTML("afterbegin", SPEAKER_SVG);
+  [$("cSayWord"), $("cSayEx")].forEach((b) => b.classList.add("speak"));
+  $("cSayWord").addEventListener("click", () => deck.length && Speech.speak(deck[deckPos].w, $("cSayWord")));
+  $("cSayEx").addEventListener("click", () => deck.length && Speech.speak(deck[deckPos].e, $("cSayEx")));
   $("fcard").addEventListener("click", flip);
   $("cPrev").addEventListener("click", () => deckPos > 0 && go(-1));
   $("cNext").addEventListener("click", () => go(1));
@@ -728,7 +856,8 @@ mark { background: var(--marker); color: var(--marker-ink); padding: 0 2px; bord
     if (activeTab !== "card" || /INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName || "")) return;
     if (e.key === "ArrowRight") { e.preventDefault(); go(1); }
     else if (e.key === "ArrowLeft") { e.preventDefault(); if (deckPos > 0) go(-1); }
-    else if ((e.key === " " || e.key === "Enter") && document.activeElement !== $("fcard")) { e.preventDefault(); flip(); }
+    else if ((e.key === " " || e.key === "Enter") && document.activeElement !== $("fcard") && !document.activeElement?.classList.contains("btn")) { e.preventDefault(); flip(); }
+    else if ((e.key === "s" || e.key === "S") && !e.metaKey && !e.ctrlKey && deck.length) { e.preventDefault(); Speech.speak(deck[deckPos].w, $("cSayWord")); }
   });
   let tx = null; // 휴대폰 좌우 스와이프
   $("fcard").addEventListener("touchstart", (e) => { tx = e.touches[0].clientX; }, { passive: true });
@@ -775,6 +904,9 @@ mark { background: var(--marker); color: var(--marker-ink); padding: 0 2px; bord
     $("qBar").style.width = (quiz.i / quiz.qs.length * 100) + "%";
     $("qPrompt").textContent = w2m ? q.w.w : q.w.m;
     $("qPrompt").classList.toggle("ko", !w2m);
+    // 영어가 문제일 때만 문제 옆에 발음 버튼 (뜻 → 단어는 정답을 들려주면 답이 드러나므로 숨김)
+    $("qSay").replaceChildren(w2m ? speakBtn(q.w.w, `${q.w.w} 듣기`) : "");
+    if (w2m && Speech.prefs.autoQuiz) Speech.speak(q.w.w, $("qSay").firstChild); else Speech.stop();
     $("qExample").hidden = true; $("qNext").hidden = true;
     $("qChoices").replaceChildren(...q.options.map((opt, n) => el("button", {
       class: "choice" + (w2m ? "" : " en"), type: "button", onclick: (ev) => answer(ev.currentTarget, opt),
@@ -791,7 +923,12 @@ mark { background: var(--marker); color: var(--marker-ink); padding: 0 2px; bord
       if (keyOf(t) === keyOf(q.answer)) b.classList.add("right"); else if (b === btn) b.classList.add("wrong");
     });
     $("qScoreNow").textContent = `정답 ${quiz.right}`;
-    if (q.w.e) { $("qExample").replaceChildren(highlight(q.w.e, q.w.w)); $("qExample").hidden = false; }
+    if (q.w.e) { $("qExample").replaceChildren(speakBtn(q.w.e, "예문 듣기", true), highlight(q.w.e, q.w.w)); $("qExample").hidden = false; }
+    if (quiz.dir === "m2w") {
+      // 답을 고른 뒤에는 정답 단어도 들을 수 있게
+      $("qSay").replaceChildren(speakBtn(q.w.w, `${q.w.w} 듣기`));
+      if (Speech.prefs.autoQuiz) Speech.speak(q.w.w, $("qSay").firstChild);
+    }
     $("qNext").textContent = quiz.i === quiz.qs.length - 1 ? "결과 보기" : "다음 문제";
     $("qNext").hidden = false; $("qNext").focus();
   }
@@ -806,11 +943,11 @@ mark { background: var(--marker); color: var(--marker-ink); padding: 0 2px; bord
     pendingDelete = null;
     $("qWrongList").replaceChildren(...quiz.wrong.map((w) => el("li", {},
       el("div", { class: "w-head" }, el("span", { class: "w-word", text: w.w }), el("span", { class: "w-mean", text: w.m })),
-      el("span"), w.e ? el("p", { class: "w-ex" }, highlight(w.e, w.w)) : null)));
+      el("div", { class: "w-act" }, speakBtn(w.w, `${w.w} 듣기`)), w.e ? el("p", { class: "w-ex" }, speakBtn(w.e, "예문 듣기", true), highlight(w.e, w.w)) : null)));
   }
   $("qStart").addEventListener("click", () => startQuiz(byTag(Store.words(), $("qTag").value)));
   $("qNext").addEventListener("click", () => { quiz.i++; quiz.i >= quiz.qs.length ? finishQuiz() : renderQ(); });
-  $("qQuit").addEventListener("click", () => { quiz = null; $("qPlay").hidden = true; $("qSetup").hidden = false; });
+  $("qQuit").addEventListener("click", () => { Speech.stop(); quiz = null; $("qPlay").hidden = true; $("qSetup").hidden = false; });
   $("qAgain").addEventListener("click", () => { $("qResult").hidden = true; $("qSetup").hidden = false; fillTagSelect($("qTag")); });
   $("qRetryWrong").addEventListener("click", () => { const pool = quiz.wrong; $("qCount").value = "0"; startQuiz(pool); });
   document.addEventListener("keydown", (e) => {
